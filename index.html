@@ -1,95 +1,98 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#ff6b6b">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Mes recettes IG bas">
-  <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="icon-192.png">
-  <title>Mes recettes IG bas</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#fff7fa">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Mes recettes IG bas">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Mes recettes IG bas</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-  <div class="app-container">
-
-    <div id="tab-recipes" class="tab-content active">
-      <header class="header-top">
-        <div class="brand-block"><div class="brand-kicker">🍓 Mon petit carnet</div><h1>Mes Recettes</h1></div>
-        <button id="open-add-modal-btn" class="icon-btn" title="Ajouter une recette">+</button>
+<div class="app-shell">
+  <main class="main-content">
+    <section id="tab-recipes" class="tab-content active">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">🍓 MON PETIT CARNET</div>
+          <h1>Mes Recettes</h1>
+          <p class="subtitle">Des idées gourmandes, simplement.</p>
+        </div>
+        <button id="open-add-modal-btn" class="add-button" aria-label="Ajouter une recette">+</button>
       </header>
 
-      <div class="search-container">
-        <input type="text" id="search-input" placeholder="Tape un ingrédient (ex: pomme)...">
+      <div class="hero-card">
+        <div>
+          <span class="hero-pill">✨ IG bas &amp; gourmand</span>
+          <h2>Qu’est-ce qu’on mange aujourd’hui ?</h2>
+          <p>Retrouve tes recettes en quelques lettres et garde tes préférées sous la main.</p>
+        </div>
+        <div class="hero-emoji">🍓</div>
       </div>
 
-      <div id="recipes-results" class="recipes-list">
-        <p class="placeholder-text">Tape un ingrédient pour afficher les recettes correspondantes.</p>
+      <div class="search-title">🔎 Cherche une recette ou un ingrédient</div>
+      <div class="search-wrap">
+        <span>⌕</span>
+        <input type="text" id="search-input" placeholder="Ex. pomme, chocolat, courgette…" autocomplete="off">
       </div>
-    </div>
 
-    <div id="tab-calendar" class="tab-content">
-      <header class="header-top">
-        <div class="brand-block"><div class="brand-kicker">🌷 Mon planning gourmand</div><h1>Mon Calendrier</h1></div>
+      <div class="section-heading">
+        <div><span class="tiny-label">MES IDÉES</span><h2 id="results-title">Toutes mes recettes</h2></div>
+        <span id="recipe-count" class="count-badge">0</span>
+      </div>
+      <div id="recipes-results" class="recipes-list"></div>
+    </section>
+
+    <section id="tab-calendar" class="tab-content">
+      <header class="topbar calendar-topbar">
+        <div>
+          <div class="eyebrow">🌷 MON PLANNING GOURMAND</div>
+          <h1>Mon Calendrier</h1>
+          <p class="subtitle">Mes recettes prévues, sans prise de tête.</p>
+        </div>
       </header>
+      <div class="calendar-intro"><span>🗓️</span><div><strong>Mon petit planning</strong><p>Touche une recette pour ouvrir sa fiche.</p></div></div>
       <div id="calendar-days-container" class="calendar-container"></div>
-    </div>
+    </section>
+  </main>
 
-    <nav class="bottom-nav">
-      <button class="nav-item active" data-tab="recipes">
-        <span class="nav-icon">🍲</span>
-        <span>Recettes</span>
-      </button>
-      <button class="nav-item" data-tab="calendar">
-        <span class="nav-icon">📅</span>
-        <span>Calendrier</span>
-      </button>
-    </nav>
-  </div>
+  <nav class="bottom-nav" aria-label="Navigation">
+    <button class="nav-item active" data-tab="recipes"><span class="nav-icon">🍲</span><span>Recettes</span></button>
+    <button class="nav-item" data-tab="calendar"><span class="nav-icon">🗓️</span><span>Calendrier</span></button>
+  </nav>
+</div>
 
-  <!-- AJOUT D'UNE RECETTE -->
-  <div id="add-modal" class="modal">
-    <div class="modal-content">
-      <span id="close-modal-btn" class="close-btn">&times;</span>
-      <h2>Nouvelle Recette</h2>
-      <input type="text" id="new-title" placeholder="Nom de la recette">
-      <input type="text" id="new-ingredients" placeholder="Ingrédients (séparés par des virgules)">
-      <textarea id="new-instructions" placeholder="Étapes de préparation..."></textarea>
-      <button id="save-new-recipe-btn">Enregistrer</button>
-    </div>
-  </div>
+<div id="add-modal" class="modal"><div class="modal-content">
+  <button id="close-modal-btn" class="close-btn" aria-label="Fermer">×</button>
+  <div class="modal-kicker">🍓 NOUVELLE PAGE</div><h2>Ajouter une recette</h2>
+  <p class="modal-subtitle">Écris-la comme dans ton carnet gourmand.</p>
+  <label>Nom de la recette<input type="text" id="new-title" placeholder="Ex. Bowl fraises &amp; yaourt"></label>
+  <label>Ingrédients<input type="text" id="new-ingredients" placeholder="Séparés par des virgules"></label>
+  <label>Préparation<textarea id="new-instructions" placeholder="Les étapes de préparation…"></textarea></label>
+  <button id="save-new-recipe-btn" class="primary-button">Ajouter à mon carnet ✨</button>
+</div></div>
 
-  <!-- PLANIFICATION -->
-  <div id="schedule-modal" class="modal">
-    <div class="modal-content">
-      <span id="close-schedule-btn" class="close-btn">&times;</span>
-      <h2 id="schedule-recipe-title">Planifier la recette</h2>
-      <p>Choisis la date à laquelle tu souhaites cuisiner cette recette :</p>
-      <input type="date" id="schedule-date-input">
-      <button id="confirm-schedule-btn">Valider la date</button>
-    </div>
-  </div>
+<div id="schedule-modal" class="modal"><div class="modal-content small-modal">
+  <button id="close-schedule-btn" class="close-btn" aria-label="Fermer">×</button>
+  <div class="modal-kicker">📅 MON PLANNING</div><h2 id="schedule-recipe-title">Planifier la recette</h2>
+  <p class="modal-subtitle">Choisis la date à laquelle tu veux la cuisiner.</p>
+  <input type="date" id="schedule-date-input">
+  <button id="confirm-schedule-btn" class="primary-button">Ajouter au calendrier 🌷</button>
+</div></div>
 
-  <!-- NOUVEAU : AFFICHAGE COMPLET D'UNE RECETTE -->
-  <div id="recipe-detail-modal" class="modal">
-    <div class="modal-content recipe-detail-content">
-      <span id="close-recipe-detail-btn" class="close-btn">&times;</span>
-      <h2 id="detail-recipe-title"></h2>
-      <div class="detail-section">
-        <h3>Ingrédients</h3>
-        <p id="detail-recipe-ingredients"></p>
-      </div>
-      <div class="detail-section">
-        <h3>Préparation</h3>
-        <p id="detail-recipe-instructions"></p>
-      </div>
-      <div id="detail-recipe-date" class="scheduled-badge"></div>
-    </div>
-  </div>
+<div id="recipe-detail-modal" class="modal"><div class="modal-content recipe-detail-content">
+  <button id="close-recipe-detail-btn" class="close-btn" aria-label="Fermer">×</button>
+  <div id="detail-recipe-image" class="detail-image"></div>
+  <div class="modal-kicker">🍴 MA FICHE RECETTE</div><h2 id="detail-recipe-title"></h2>
+  <div id="detail-recipe-date" class="scheduled-badge"></div>
+  <div class="detail-section ingredients-box"><h3>🧺 Ingrédients</h3><p id="detail-recipe-ingredients"></p></div>
+  <div class="detail-section prep-box"><h3>🥄 Préparation</h3><p id="detail-recipe-instructions"></p></div>
+  <button id="detail-plan-btn" class="secondary-button">📅 Planifier cette recette</button>
+</div></div>
 
-  <script src="script.js"></script>
-</body>
-</html>
+<script src="script.js"></script>
+</body></html>
