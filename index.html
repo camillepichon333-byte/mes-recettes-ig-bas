@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#ff6b6b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Mes recettes IG bas">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>Mes recettes IG bas</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-container">
+
+    <div id="tab-recipes" class="tab-content active">
+      <header class="header-top">
+        <div class="brand-block"><div class="brand-kicker">🍓 Mon petit carnet</div><h1>Mes Recettes</h1></div>
+        <button id="open-add-modal-btn" class="icon-btn" title="Ajouter une recette">+</button>
+      </header>
+
+      <div class="search-container">
+        <input type="text" id="search-input" placeholder="Tape un ingrédient (ex: pomme)...">
+      </div>
+
+      <div id="recipes-results" class="recipes-list">
+        <p class="placeholder-text">Tape un ingrédient pour afficher les recettes correspondantes.</p>
+      </div>
+    </div>
+
+    <div id="tab-calendar" class="tab-content">
+      <header class="header-top">
+        <div class="brand-block"><div class="brand-kicker">🌷 Mon planning gourmand</div><h1>Mon Calendrier</h1></div>
+      </header>
+      <div id="calendar-days-container" class="calendar-container"></div>
+    </div>
+
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-tab="recipes">
+        <span class="nav-icon">🍲</span>
+        <span>Recettes</span>
+      </button>
+      <button class="nav-item" data-tab="calendar">
+        <span class="nav-icon">📅</span>
+        <span>Calendrier</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- AJOUT D'UNE RECETTE -->
+  <div id="add-modal" class="modal">
+    <div class="modal-content">
+      <span id="close-modal-btn" class="close-btn">&times;</span>
+      <h2>Nouvelle Recette</h2>
+      <input type="text" id="new-title" placeholder="Nom de la recette">
+      <input type="text" id="new-ingredients" placeholder="Ingrédients (séparés par des virgules)">
+      <textarea id="new-instructions" placeholder="Étapes de préparation..."></textarea>
+      <button id="save-new-recipe-btn">Enregistrer</button>
+    </div>
+  </div>
+
+  <!-- PLANIFICATION -->
+  <div id="schedule-modal" class="modal">
+    <div class="modal-content">
+      <span id="close-schedule-btn" class="close-btn">&times;</span>
+      <h2 id="schedule-recipe-title">Planifier la recette</h2>
+      <p>Choisis la date à laquelle tu souhaites cuisiner cette recette :</p>
+      <input type="date" id="schedule-date-input">
+      <button id="confirm-schedule-btn">Valider la date</button>
+    </div>
+  </div>
+
+  <!-- NOUVEAU : AFFICHAGE COMPLET D'UNE RECETTE -->
+  <div id="recipe-detail-modal" class="modal">
+    <div class="modal-content recipe-detail-content">
+      <span id="close-recipe-detail-btn" class="close-btn">&times;</span>
+      <h2 id="detail-recipe-title"></h2>
+      <div class="detail-section">
+        <h3>Ingrédients</h3>
+        <p id="detail-recipe-ingredients"></p>
+      </div>
+      <div class="detail-section">
+        <h3>Préparation</h3>
+        <p id="detail-recipe-instructions"></p>
+      </div>
+      <div id="detail-recipe-date" class="scheduled-badge"></div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
