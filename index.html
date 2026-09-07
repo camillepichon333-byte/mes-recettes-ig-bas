@@ -154,33 +154,6 @@
     </div>
   </div>
 
-  <div class="modal" id="editModal">
-    <div class="modal-card">
-      <button class="close-btn" data-close="editModal">×</button>
-      <span class="eyebrow">✏️ Mon carnet</span>
-      <h2>Modifier la recette</h2>
-      <input type="hidden" id="editId">
-      <label>Nom de la recette *
-        <input id="editTitle" placeholder="Ex : Bowl avocat & saumon">
-      </label>
-      <label>Catégorie
-        <select id="editCategory">
-          <option>Petit-déjeuner</option><option>Déjeuner</option><option>Dîner</option><option>Dessert</option>
-        </select>
-      </label>
-      <label>Temps de préparation
-        <input id="editTime" placeholder="Ex : 20 min">
-      </label>
-      <label>Ingrédients
-        <textarea id="editIngredients" placeholder="Un ingrédient par ligne"></textarea>
-      </label>
-      <label>Préparation
-        <textarea id="editPrep" placeholder="Décris les étapes..."></textarea>
-      </label>
-      <button class="primary-btn" id="saveEditBtn">💾 Enregistrer les modifications</button>
-    </div>
-  </div>
-
   <div class="modal" id="scheduleModal">
     <div class="modal-card">
       <button class="close-btn" data-close="scheduleModal">×</button>
@@ -218,6 +191,33 @@
         <textarea id="newPrep" placeholder="Décris les étapes..."></textarea>
       </label>
       <button class="primary-btn" id="addRecipeBtn">Enregistrer la recette</button>
+    </div>
+  </div>
+
+
+  <div class="modal" id="editModal">
+    <div class="modal-card">
+      <button class="close-btn" data-close="editModal">×</button>
+      <span class="eyebrow">✏️ Modifier mon idée</span>
+      <h2>Modifier la recette</h2>
+      <label>Nom de la recette *
+        <input id="editTitle">
+      </label>
+      <label>Catégorie
+        <select id="editCategory">
+          <option>Petit-déjeuner</option><option>Déjeuner</option><option>Dîner</option><option>Dessert</option>
+        </select>
+      </label>
+      <label>Temps de préparation
+        <input id="editTime">
+      </label>
+      <label>Ingrédients
+        <textarea id="editIngredients"></textarea>
+      </label>
+      <label>Préparation
+        <textarea id="editPrep"></textarea>
+      </label>
+      <button class="primary-btn" id="saveEditBtn">Enregistrer les modifications ✨</button>
     </div>
   </div>
 

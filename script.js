@@ -8,7 +8,7 @@ const seed=[
 ];
 let recipes=JSON.parse(localStorage.getItem(KEY)||"null")||seed;
 let currentCategory="Toutes", selectedDate=todayISO(), calDate=new Date();
-let scheduleId=null;
+let scheduleId=null, editId=null;
 
 function pad(n){return String(n).padStart(2,"0")}
 function todayISO(){const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`}
@@ -22,7 +22,7 @@ function nav(name){
 function recipeCard(r){
  return `<article class="recipe-card" data-id="${r.id}">
    <div class="food-art">${r.art||"🍽️"}</div>
-   <div class="recipe-info"><span class="category-pill">${esc(r.category)}</span><h3>${esc(r.title)}</h3><p>${esc(r.ingredients.slice(0,3).join(" • "))}</p><div class="meta"><span>◷ ${esc(r.time||"—")}</span><span>♨ ${esc(r.difficulty||"Facile")}</span></div></div>
+   <div class="recipe-info"><span class="category-pill">${esc(r.category)}</span><h3>${esc(r.title)}</h3><p>${esc(r.ingredients.slice(0,3).join(" • "))}</p><div class="meta"><span>◷ ${esc(r.time||"—")}</span><span>♨ ${esc(r.difficulty||"Facile")}</span></div><div class="recipe-actions"><button class="mini-action edit-action" data-edit="${r.id}">✏️ Modifier</button><button class="mini-action delete-action" data-delete="${r.id}">🗑️ Supprimer</button></div></div>
    <button class="fav" data-fav="${r.id}">${r.favorite?"♥":"♡"}</button>
  </article>`
 }
@@ -33,52 +33,20 @@ function renderHome(){const q=$("#homeSearch")?.value||"";let arr=recipes.filter
 function renderFavorites(){renderList($("#favoriteList"),recipes.filter(r=>r.favorite),"Tu n’as pas encore de favori. Appuie sur ♡ sur une recette.")}
 function renderStats(){$("#statRecipes").textContent=recipes.length;$("#statFavs").textContent=recipes.filter(r=>r.favorite).length;$("#statCalendar").textContent=recipes.filter(r=>r.scheduledDate).length}
 function formatDate(iso){if(!iso)return "";return new Intl.DateTimeFormat("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric"}).format(new Date(iso+"T12:00:00"))}
-function openDetail(id){
- const r=recipes.find(x=>x.id==id);if(!r)return;
- const safeTitle=esc(r.title);
- const safeCategory=esc(r.category||'Autre');
- const safeTime=esc(r.time||'—');
- const safeDifficulty=esc(r.difficulty||'Facile');
- const photo=r.photo?`<img class="detail-photo" src="${r.photo}" alt="${safeTitle}">`:`<div class="detail-art">${r.art||"🍽️"}</div>`;
- $("#detailContent").innerHTML=`
-   ${photo}
-   <div class="label-row"><span class="info-pill">${safeCategory}</span><span class="info-pill">◷ ${safeTime}</span><span class="info-pill">♨ ${safeDifficulty}</span></div>
-   <h2>${safeTitle}</h2>
-   ${r.scheduledDate?`<div class="info-pill">🗓️ ${formatDate(r.scheduledDate)}</div>`:""}
-   <h3>🌿 Ingrédients</h3><ul>${(r.ingredients||[]).map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
-   <h3>🥣 Préparation</h3><ol>${(r.prep||[]).map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
-   <div class="detail-actions">
-     <button class="primary-btn" onclick="openSchedule(${r.id});closeModal('detailModal')">🗓️ Ajouter au calendrier</button>
-     <button class="edit-btn" onclick="openEdit(${r.id})">✏️ Modifier la recette</button>
-     <button class="delete-btn" onclick="deleteRecipe(${r.id})">🗑️ Supprimer la recette</button>
-   </div>`;
- openModal("detailModal")
-}
-function openEdit(id){
- const r=recipes.find(x=>x.id==id);if(!r)return;
- closeModal("detailModal");
- $("#editId").value=r.id;$("#editTitle").value=r.title;$("#editCategory").value=r.category||"Déjeuner";$("#editTime").value=r.time||"";
- $("#editIngredients").value=(r.ingredients||[]).join("\n");$("#editPrep").value=(r.prep||[]).join("\n");
- openModal("editModal")
-}
-function saveEdit(){
- const id=Number($("#editId").value),r=recipes.find(x=>x.id===id);if(!r)return;
- const title=$("#editTitle").value.trim();if(!title){alert("Donne un nom à ta recette 😊");return}
- r.title=title;r.category=$("#editCategory").value;r.time=$("#editTime").value.trim()||"—";
- r.ingredients=$("#editIngredients").value.split("\n").map(x=>x.trim()).filter(Boolean);
- r.prep=$("#editPrep").value.split("\n").map(x=>x.trim()).filter(Boolean);
- if(!r.ingredients.length)r.ingredients=["À compléter"];if(!r.prep.length)r.prep=["À compléter"];
- save();closeModal("editModal");nav("recipes")
-}
-function deleteRecipe(id){
- const r=recipes.find(x=>x.id==id);if(!r)return;
- if(!confirm(`Supprimer « ${r.title} » ?\n\nCette recette sera retirée de ton carnet et de ton calendrier.`))return;
- recipes=recipes.filter(x=>x.id!==id);save();closeModal("detailModal");nav("recipes")
-}
-
+function openDetail(id){const r=recipes.find(x=>x.id==id);if(!r)return;$("#detailContent").innerHTML=`<div class="detail-art">${r.art||"🍽️"}</div><div class="label-row"><span class="info-pill">${esc(r.category)}</span><span class="info-pill">◷ ${esc(r.time||"—")}</span><span class="info-pill">♨ ${esc(r.difficulty||"Facile")}</span></div><h2>${esc(r.title)}</h2>${r.scheduledDate?`<div class="info-pill">🗓️ ${formatDate(r.scheduledDate)}</div>`:""}<h3>🌿 Ingrédients</h3><ul>${r.ingredients.map(x=>`<li>${esc(x)}</li>`).join("")}</ul><h3>🥣 Préparation</h3><ol>${r.prep.map(x=>`<li>${esc(x)}</li>`).join("")}</ol><button class="primary-btn" onclick="openSchedule(${r.id});closeModal('detailModal')">🗓️ Ajouter au calendrier</button>`;openModal("detailModal")}
 function openSchedule(id){const r=recipes.find(x=>x.id==id);if(!r)return;scheduleId=id;$("#scheduleTitle").textContent=r.title;$("#scheduleDate").value=r.scheduledDate||selectedDate||todayISO();openModal("scheduleModal")}
 function openModal(id){$("#"+id).classList.add("open")}
 function closeModal(id){$("#"+id).classList.remove("open")}
+
+function openEdit(id){
+ const r=recipes.find(x=>x.id==id); if(!r)return;
+ editId=id; $("#editTitle").value=r.title; $("#editCategory").value=r.category||"Déjeuner"; $("#editTime").value=r.time||""; $("#editIngredients").value=(r.ingredients||[]).join("\n"); $("#editPrep").value=(r.prep||[]).join("\n"); openModal("editModal");
+}
+function deleteRecipe(id){
+ const r=recipes.find(x=>x.id==id); if(!r)return;
+ if(!confirm(`Supprimer « ${r.title} » de ton carnet ?`))return;
+ recipes=recipes.filter(x=>x.id!=id); save();
+}
 function renderCalendar(){
  const y=calDate.getFullYear(),m=calDate.getMonth();$("#monthLabel").textContent=new Intl.DateTimeFormat("fr-FR",{month:"long",year:"numeric"}).format(calDate).replace(/^./,c=>c.toUpperCase());
  const first=new Date(y,m,1), start=(first.getDay()+6)%7, days=new Date(y,m+1,0).getDate(), prev=new Date(y,m,0).getDate();let html="";
@@ -99,13 +67,30 @@ $$("[data-nav]").forEach(b=>b.addEventListener("click",()=>nav(b.dataset.nav)));
 $$("[data-action='add']").forEach(b=>b.addEventListener("click",()=>openModal("addModal")));
 $("#menuBtn").onclick=()=>$("#drawer").classList.add("open");$("#closeDrawer").onclick=()=>$("#drawer").classList.remove("open");
 $$("[data-close]").forEach(b=>b.onclick=()=>closeModal(b.dataset.close));
-document.addEventListener("click",e=>{const fav=e.target.closest("[data-fav]");if(fav){e.stopPropagation();const r=recipes.find(x=>x.id==fav.dataset.fav);r.favorite=!r.favorite;save();return}const card=e.target.closest(".recipe-card");if(card)openDetail(card.dataset.id);const day=e.target.closest(".cal-day");if(day){selectedDate=day.dataset.date;renderCalendar()}});
+document.addEventListener("click",e=>{
+ const edit=e.target.closest("[data-edit]"); if(edit){e.stopPropagation();openEdit(edit.dataset.edit);return}
+ const del=e.target.closest("[data-delete]"); if(del){e.stopPropagation();deleteRecipe(del.dataset.delete);return}
+ const fav=e.target.closest("[data-fav]");if(fav){e.stopPropagation();const r=recipes.find(x=>x.id==fav.dataset.fav);r.favorite=!r.favorite;save();return}
+ const card=e.target.closest(".recipe-card");if(card)openDetail(card.dataset.id);
+ const day=e.target.closest(".cal-day");if(day){selectedDate=day.dataset.date;renderCalendar()}
+});
 $("#homeSearch").oninput=renderHome;$("#recipeSearch").oninput=renderRecipes;
 $$(".chip").forEach(c=>c.onclick=()=>{$$(".chip").forEach(x=>x.classList.remove("active"));c.classList.add("active");currentCategory=c.dataset.category;renderRecipes()});
 $("#prevMonth").onclick=()=>{calDate.setMonth(calDate.getMonth()-1);renderCalendar()};$("#nextMonth").onclick=()=>{calDate.setMonth(calDate.getMonth()+1);renderCalendar()};
 $("#saveSchedule").onclick=()=>{const r=recipes.find(x=>x.id==scheduleId);if(r){r.scheduledDate=$("#scheduleDate").value;selectedDate=r.scheduledDate;save();closeModal("scheduleModal");nav("calendar")}};
 $("#removeSchedule").onclick=()=>{const r=recipes.find(x=>x.id==scheduleId);if(r){r.scheduledDate="";save();closeModal("scheduleModal");nav("calendar")}};
-$("#addRecipeBtn").onclick=addRecipe;$("#saveEditBtn").onclick=saveEdit;
+
+$("#saveEditBtn").onclick=()=>{
+ const r=recipes.find(x=>x.id==editId); if(!r)return;
+ const title=$("#editTitle").value.trim(); if(!title){alert("Donne un nom à ta recette 😊");return}
+ r.title=title; r.category=$("#editCategory").value; r.time=$("#editTime").value.trim()||"—";
+ r.ingredients=$("#editIngredients").value.split("\n").map(x=>x.trim()).filter(Boolean);
+ r.prep=$("#editPrep").value.split("\n").map(x=>x.trim()).filter(Boolean);
+ if(!r.ingredients.length)r.ingredients=["À compléter"]; if(!r.prep.length)r.prep=["À compléter"];
+ localStorage.setItem(KEY,JSON.stringify(recipes)); closeModal("editModal"); renderAll();
+};
+
+$("#addRecipeBtn").onclick=addRecipe;
 $("#clearData").onclick=()=>{if(confirm("Réinitialiser les recettes de démonstration ?")){recipes=JSON.parse(JSON.stringify(seed));save()}};
 if("serviceWorker" in navigator) navigator.serviceWorker.register("service-worker.js").catch(()=>{});
 renderAll();
