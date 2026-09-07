@@ -1,1 +1,21 @@
-{"name":"Mes recettes IG bas","short_name":"Mes recettes","start_url":"./","display":"standalone","background_color":"#fff8fb","theme_color":"#df6f8e","lang":"fr","icons":[{"src":"icon-192.png","sizes":"192x192","type":"image/png"},{"src":"icon-512.png","sizes":"512x512","type":"image/png"}]}
+{
+  "name": "Mes recettes IG bas",
+  "short_name": "Recettes IG bas",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#fffaf4",
+  "theme_color": "#f46f70",
+  "description": "Mon petit carnet de recettes IG bas.",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
