@@ -13,6 +13,8 @@
   <title>Les recettes IG bas de Camille</title>
 </head>
 <body>
+  <input id="quickPhotoInput" type="file" accept="image/*" capture="environment" class="photo-input" aria-label="Ajouter une photo à une recette">
+
   <div class="app-shell">
     <header class="topbar">
       <button class="icon-btn" id="menuBtn" aria-label="Menu">☰</button>
@@ -175,8 +177,8 @@
       <button class="close-btn" data-close="addModal">×</button>
       <span class="eyebrow">🌷 Une nouvelle idée</span>
       <h2>Ajouter une recette</h2>
-      <input id="newPhoto" type="file" accept="image/*" capture="environment" hidden>
-      <button type="button" class="photo-picker" id="newPhotoBtn">📸 Ajouter une photo</button>
+      <input id="newPhoto" type="file" accept="image/*" capture="environment" class="photo-input">
+      <label for="newPhoto" class="photo-picker">📸 Ajouter une photo</label>
       <div id="newPhotoPreview" class="recipe-photo-preview"></div>
       <label>Nom de la recette *
         <input id="newTitle" placeholder="Ex : Bowl avocat & saumon">
@@ -205,8 +207,8 @@
       <button class="close-btn" data-close="editModal">×</button>
       <span class="eyebrow">✏️ Modifier mon idée</span>
       <h2>Modifier la recette</h2>
-      <input id="editPhoto" type="file" accept="image/*" capture="environment" hidden>
-      <button type="button" class="photo-picker" id="editPhotoBtn">📸 Changer la photo</button>
+      <input id="editPhoto" type="file" accept="image/*" capture="environment" class="photo-input">
+      <label for="editPhoto" class="photo-picker">📸 Changer la photo</label>
       <button type="button" class="secondary-btn photo-remove" id="removeEditPhotoBtn">🗑️ Retirer la photo</button>
       <div id="editPhotoPreview" class="recipe-photo-preview"></div>
       <label>Nom de la recette *

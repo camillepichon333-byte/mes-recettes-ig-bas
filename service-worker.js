@@ -1,4 +1,4 @@
-const CACHE='mes-recettes-ig-bas-logo-v12';
+const CACHE='mes-recettes-ig-bas-logo-v13';
 const ASSETS=[
   './',
   './index.html',
