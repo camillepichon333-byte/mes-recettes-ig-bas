@@ -4,9 +4,15 @@
 .mini-action{border:1px solid rgba(110,75,85,.15);border-radius:999px;padding:7px 10px;background:#fffaf7;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
 .mini-action.delete-action{background:#fff2f1}
 
-.scanner-card{background:linear-gradient(145deg,#9bc9d1,#70aebd)}
-.upload-art{border:0;width:100%;cursor:pointer}
-.photo-preview{width:100%;max-height:240px;object-fit:cover;border-radius:20px;margin:10px 0;border:1px solid #eedbd3}
-.scan-help{font-size:12px;line-height:1.5;color:#6f776e;background:#fff4ec;border-radius:16px;padding:12px}
-.scan-status{font-size:12px;color:#4f7a55;min-height:20px;margin:8px 0}
-.scan-text{min-height:150px}
+.scan-card{grid-column:span 2;background:#efe8f8}
+.scanner-card{max-height:88vh;overflow:auto}
+.scanner-intro{line-height:1.55;color:#6d5960}
+.scanner-note{font-size:12px;color:#8a737b;line-height:1.45;margin-top:12px}
+.scan-preview{margin:14px 0;display:flex;justify-content:center}
+.scan-preview img{max-width:100%;max-height:260px;border-radius:18px;object-fit:contain;border:1px solid rgba(110,75,85,.12);background:#fff}
+.scan-progress{margin:12px 0}
+.progress-track{height:8px;background:#f2e6e2;border-radius:99px;overflow:hidden}
+.progress-track span{display:block;width:0;height:100%;background:#d9909d;transition:width .2s}
+#scanProgressText{font-size:13px;text-align:center;color:#7c656c;margin:8px 0}
+.scanner-tip{background:#fff5e7;border-radius:14px;padding:11px 12px;font-size:12px;line-height:1.45;margin:10px 0 14px}
+@media(max-width:430px){.scan-card{grid-column:span 2}}

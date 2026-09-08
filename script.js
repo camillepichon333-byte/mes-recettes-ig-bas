@@ -17,28 +17,137 @@ function save(){localStorage.setItem(KEY,JSON.stringify(recipes));renderAll()}
 function esc(s){return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
 function nav(name){
  $$(".screen").forEach(x=>x.classList.remove("active")); const id=name+"Screen"; const el=$("#"+id); if(el)el.classList.add("active");
- $$(".nav-item").forEach(x=>x.classList.toggle("active",x.dataset.nav===name)); window.scrollTo({top:0,behavior:"smooth"}); renderAll();
-}
+ $$(".nav-item").forEach(x=>x.classList.toggle("active",x.dataset.nav===name)); window.scrollTo({top:0,behavior:"smooth"}); 
+// --- Scanner v2 : OCR amélioré, local, avec pré-traitement photo ---
+(function(){
+  let scanFile=null, scanObjectUrl=null;
 
-function fileToDataURL(file,maxSize=1200){
- return new Promise((resolve,reject)=>{
-  const reader=new FileReader();
-  reader.onload=()=>{const img=new Image();img.onload=()=>{
-   const scale=Math.min(1,maxSize/Math.max(img.width,img.height));
-   const c=document.createElement("canvas");c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);
-   c.getContext("2d").drawImage(img,0,0,c.width,c.height);resolve(c.toDataURL("image/jpeg",.82));
-  };img.onerror=reject;img.src=reader.result};reader.onerror=reject;reader.readAsDataURL(file);
- });
-}
-let pendingNewPhoto="", pendingEditPhoto="";
-function setPreview(input,preview,assign){
- const f=input.files?.[0]; if(!f)return;
- fileToDataURL(f).then(data=>{assign(data);preview.src=data;preview.hidden=false}).catch(()=>alert("Je n’arrive pas à lire cette photo."));
-}
+  function setProgress(n,msg){
+    $("#scanProgress").hidden=false; $("#scanProgressBar").style.width=n+"%"; $("#scanProgressText").textContent=msg;
+  }
+  function showPreview(file){
+    scanFile=file;
+    if(scanObjectUrl) URL.revokeObjectURL(scanObjectUrl);
+    scanObjectUrl=URL.createObjectURL(file);
+    $("#scanPreview").innerHTML=`<img src="${scanObjectUrl}" alt="Aperçu de la recette">`;
+    $("#analyzeScanBtn").disabled=false;
+    $("#scanResult").hidden=true;
+    $("#scanProgress").hidden=true;
+  }
 
+  function preprocess(file){
+    return new Promise((resolve,reject)=>{
+      const img=new Image();
+      img.onload=()=>{
+        const max=2200, scale=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));
+        const w=Math.max(1,Math.round(img.naturalWidth*scale)), h=Math.max(1,Math.round(img.naturalHeight*scale));
+        const c=document.createElement("canvas"); c.width=w;c.height=h;
+        const ctx=c.getContext("2d",{willReadFrequently:true});
+        ctx.drawImage(img,0,0,w,h);
+        const d=ctx.getImageData(0,0,w,h), a=d.data;
+        for(let i=0;i<a.length;i+=4){
+          const g=0.299*a[i]+0.587*a[i+1]+0.114*a[i+2];
+          const v=Math.max(0,Math.min(255,(g-128)*1.45+128));
+          a[i]=a[i+1]=a[i+2]=v;
+        }
+        ctx.putImageData(d,0,0);
+        c.toBlob(b=>b?resolve(b):reject(new Error("Image impossible à préparer")),"image/jpeg",.92);
+      };
+      img.onerror=()=>reject(new Error("Photo illisible"));
+      img.src=URL.createObjectURL(file);
+    });
+  }
+
+  function cleanText(t){
+    return t.replace(/\r/g,"\n")
+      .replace(/[ \t]+/g," ")
+      .replace(/\n{3,}/g,"\n\n")
+      .split("\n").map(x=>x.trim()).filter(Boolean).join("\n");
+  }
+  function linesBetween(lines,startRx,endRx){
+    let s=lines.findIndex(x=>startRx.test(x)), e=-1;
+    if(s<0)return [];
+    for(let i=s+1;i<lines.length;i++){if(endRx.test(lines[i])){e=i;break}}
+    return lines.slice(s+1,e<0?lines.length:e);
+  }
+  function parseRecipe(raw){
+    const text=cleanText(raw), lines=text.split("\n");
+    const ingredientRx=/^(ingr[eé]dients?|pour\s+\d|ingredients?)/i;
+    const prepRx=/^(pr[eé]paration|préparation|instructions?|étapes?|method|recette)/i;
+    const timeRx=/(?:temps|préparation|cuisson)\s*:?\s*(\d+\s*(?:min|minutes?|h|heures?))/i;
+    let title=(lines.find(x=>x.length>=5 && !ingredientRx.test(x) && !prepRx.test(x) && !/^\d+$/.test(x))||"Ma nouvelle recette").replace(/^[•·\-–—]\s*/,"");
+    let ing=linesBetween(lines,ingredientRx,prepRx);
+    let prep=linesBetween(lines,prepRx,/^(notes?|astuce|conseil|nutrition|valeurs?\s+nutritionnelles?)/i);
+    if(!ing.length){
+      const ix=lines.findIndex(x=>/^(?:•|-|–|—|\d+[.)])\s*/.test(x) && /(?:g|kg|ml|cl|l|c\.?\s*[àa]\s*(?:soupe|café)|cuillère|œuf|oeuf|poivre|sel|farine|huile|sucre|tomate|oignon)/i.test(x));
+      if(ix>=0) ing=lines.slice(ix,Math.min(ix+30, lines.length));
+    }
+    if(!prep.length){
+      const ix=lines.findIndex(x=>prepRx.test(x));
+      if(ix>=0) prep=lines.slice(ix+1);
+    }
+    const normalizeItems=a=>a.map(x=>x.replace(/^[•·\-–—]\s*/,"").replace(/^\d+[.)]\s*/,"").trim()).filter(x=>x.length>1);
+    ing=normalizeItems(ing); prep=normalizeItems(prep);
+    const tm=text.match(timeRx);
+    let category="Déjeuner";
+    if(/petit.?d[eé]jeuner|breakfast/i.test(text)) category="Petit-déjeuner";
+    else if(/d[iî]ner|soupe|velout[eé]/i.test(text)) category="Dîner";
+    else if(/dessert|g[aâ]teau|tarte|mousse/i.test(text)) category="Dessert";
+    return {title,category,time:tm?tm[1]:"",ingredients:ing,prep};
+  }
+
+  async function analyze(){
+    if(!scanFile)return;
+    try{
+      $("#analyzeScanBtn").disabled=true; setProgress(8,"Préparation de la photo…");
+      const img=await preprocess(scanFile);
+      setProgress(18,"Démarrage de la lecture…");
+      if(typeof Tesseract==="undefined") throw new Error("Le moteur de lecture n'est pas disponible. Vérifie ta connexion internet puis réessaie.");
+      const result=await Tesseract.recognize(img,"fra",{
+        logger:m=>{
+          if(m.status==="loading language traineddata") setProgress(25,"Chargement du français…");
+          else if(m.status==="recognizing text") setProgress(35+Math.round((m.progress||0)*55),"Lecture du texte…");
+        },
+        tessedit_pageseg_mode:"6"
+      });
+      const parsed=parseRecipe(result.data.text||"");
+      $("#scanTitle").value=parsed.title;
+      $("#scanCategory").value=parsed.category;
+      $("#scanTime").value=parsed.time;
+      $("#scanIngredients").value=parsed.ingredients.join("\n");
+      $("#scanPrep").value=parsed.prep.join("\n");
+      $("#scanResult").hidden=false;
+      setProgress(100,"Lecture terminée ✨");
+      $("#scanResult").scrollIntoView({behavior:"smooth",block:"start"});
+    }catch(e){
+      alert("Je n’arrive pas à lire correctement cette photo. Essaie avec la page bien droite, sans reflet, et avec une bonne lumière.");
+      console.error(e);
+      $("#scanProgress").hidden=true;
+    }finally{$("#analyzeScanBtn").disabled=false}
+  }
+
+  $("#takeScanBtn").onclick=()=>$("#scanPhoto").click();
+  $("#chooseScanBtn").onclick=()=>$("#scanPhoto").click();
+  $("#scanPhoto").onchange=e=>{const f=e.target.files&&e.target.files[0];if(f)showPreview(f)};
+  $("#analyzeScanBtn").onclick=analyze;
+  $$("[data-action='scan']").forEach(b=>b.addEventListener("click",()=>{openModal("scanModal");}));
+  $("#useScanBtn").onclick=()=>{
+    const title=$("#scanTitle").value.trim();
+    if(!title){alert("Donne un nom à ta recette 😊");return}
+    const ingredients=$("#scanIngredients").value.split("\n").map(x=>x.trim()).filter(Boolean);
+    const prep=$("#scanPrep").value.split("\n").map(x=>x.trim()).filter(Boolean);
+    recipes.unshift({id:Date.now(),title,category:$("#scanCategory").value,time:$("#scanTime").value.trim()||"—",difficulty:"Facile",art:"🍽️",ingredients:ingredients.length?ingredients:["À compléter"],prep:prep.length?prep:["À compléter"],favorite:false,scheduledDate:""});
+    save();
+    closeModal("scanModal"); nav("recipes");
+    $("#scanPhoto").value=""; $("#scanPreview").innerHTML=""; $("#scanResult").hidden=true; $("#scanProgress").hidden=true; scanFile=null;
+  };
+})();
+
+renderAll();
+}
 function recipeCard(r){
  return `<article class="recipe-card" data-id="${r.id}">
-   <div class="food-art">${r.photo?`<img src="${r.photo}" alt="">`:(r.art||"🍽️")}</div>
+   <div class="food-art">${r.art||"🍽️"}</div>
    <div class="recipe-info"><span class="category-pill">${esc(r.category)}</span><h3>${esc(r.title)}</h3><p>${esc(r.ingredients.slice(0,3).join(" • "))}</p><div class="meta"><span>◷ ${esc(r.time||"—")}</span><span>♨ ${esc(r.difficulty||"Facile")}</span></div><div class="recipe-actions"><button class="mini-action edit-action" data-edit="${r.id}">✏️ Modifier</button><button class="mini-action delete-action" data-delete="${r.id}">🗑️ Supprimer</button></div></div>
    <button class="fav" data-fav="${r.id}">${r.favorite?"♥":"♡"}</button>
  </article>`
@@ -50,14 +159,14 @@ function renderHome(){const q=$("#homeSearch")?.value||"";let arr=recipes.filter
 function renderFavorites(){renderList($("#favoriteList"),recipes.filter(r=>r.favorite),"Tu n’as pas encore de favori. Appuie sur ♡ sur une recette.")}
 function renderStats(){$("#statRecipes").textContent=recipes.length;$("#statFavs").textContent=recipes.filter(r=>r.favorite).length;$("#statCalendar").textContent=recipes.filter(r=>r.scheduledDate).length}
 function formatDate(iso){if(!iso)return "";return new Intl.DateTimeFormat("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric"}).format(new Date(iso+"T12:00:00"))}
-function openDetail(id){const r=recipes.find(x=>x.id==id);if(!r)return;$("#detailContent").innerHTML=`<div class="detail-art">${r.photo?`<img src="${r.photo}" alt="">`:(r.art||"🍽️")}</div><div class="label-row"><span class="info-pill">${esc(r.category)}</span><span class="info-pill">◷ ${esc(r.time||"—")}</span><span class="info-pill">♨ ${esc(r.difficulty||"Facile")}</span></div><h2>${esc(r.title)}</h2>${r.scheduledDate?`<div class="info-pill">🗓️ ${formatDate(r.scheduledDate)}</div>`:""}<h3>🌿 Ingrédients</h3><ul>${r.ingredients.map(x=>`<li>${esc(x)}</li>`).join("")}</ul><h3>🥣 Préparation</h3><ol>${r.prep.map(x=>`<li>${esc(x)}</li>`).join("")}</ol><button class="primary-btn" onclick="openSchedule(${r.id});closeModal('detailModal')">🗓️ Ajouter au calendrier</button>`;openModal("detailModal")}
+function openDetail(id){const r=recipes.find(x=>x.id==id);if(!r)return;$("#detailContent").innerHTML=`<div class="detail-art">${r.art||"🍽️"}</div><div class="label-row"><span class="info-pill">${esc(r.category)}</span><span class="info-pill">◷ ${esc(r.time||"—")}</span><span class="info-pill">♨ ${esc(r.difficulty||"Facile")}</span></div><h2>${esc(r.title)}</h2>${r.scheduledDate?`<div class="info-pill">🗓️ ${formatDate(r.scheduledDate)}</div>`:""}<h3>🌿 Ingrédients</h3><ul>${r.ingredients.map(x=>`<li>${esc(x)}</li>`).join("")}</ul><h3>🥣 Préparation</h3><ol>${r.prep.map(x=>`<li>${esc(x)}</li>`).join("")}</ol><button class="primary-btn" onclick="openSchedule(${r.id});closeModal('detailModal')">🗓️ Ajouter au calendrier</button>`;openModal("detailModal")}
 function openSchedule(id){const r=recipes.find(x=>x.id==id);if(!r)return;scheduleId=id;$("#scheduleTitle").textContent=r.title;$("#scheduleDate").value=r.scheduledDate||selectedDate||todayISO();openModal("scheduleModal")}
 function openModal(id){$("#"+id).classList.add("open")}
 function closeModal(id){$("#"+id).classList.remove("open")}
 
 function openEdit(id){
  const r=recipes.find(x=>x.id==id); if(!r)return;
- editId=id; pendingEditPhoto=r.photo||""; $("#editTitle").value=r.title; $("#editCategory").value=r.category||"Déjeuner"; $("#editPhotoPreview").src=r.photo||""; $("#editPhotoPreview").hidden=!r.photo; $("#editTime").value=r.time||""; $("#editIngredients").value=(r.ingredients||[]).join("\n"); $("#editPrep").value=(r.prep||[]).join("\n"); openModal("editModal");
+ editId=id; $("#editTitle").value=r.title; $("#editCategory").value=r.category||"Déjeuner"; $("#editTime").value=r.time||""; $("#editIngredients").value=(r.ingredients||[]).join("\n"); $("#editPrep").value=(r.prep||[]).join("\n"); openModal("editModal");
 }
 function deleteRecipe(id){
  const r=recipes.find(x=>x.id==id); if(!r)return;
@@ -77,11 +186,11 @@ function renderAll(){renderHome();renderRecipes();renderFavorites();renderStats(
 function addRecipe(){
  const title=$("#newTitle").value.trim();if(!title){alert("Donne un nom à ta recette 😊");return}
  const ingredients=$("#newIngredients").value.split("\n").map(x=>x.trim()).filter(Boolean);const prep=$("#newPrep").value.split("\n").map(x=>x.trim()).filter(Boolean);
- recipes.unshift({id:Date.now(),title,category:$("#newCategory").value,time:$("#newTime").value.trim()||"—",difficulty:"Facile",art:["🥗","🍲","🍓","🥑","🧁"][Math.floor(Math.random()*5)],ingredients:ingredients.length?ingredients:["À compléter"],prep:prep.length?prep:["À compléter"],favorite:false,scheduledDate:"",photo:pendingNewPhoto});
- localStorage.setItem(KEY,JSON.stringify(recipes));["newTitle","newTime","newIngredients","newPrep"].forEach(id=>$("#"+id).value="");pendingNewPhoto="";$("#newPhotoPreview").hidden=true;$("#newPhoto").value="";closeModal("addModal");nav("recipes")
+ recipes.unshift({id:Date.now(),title,category:$("#newCategory").value,time:$("#newTime").value.trim()||"—",difficulty:"Facile",art:["🥗","🍲","🍓","🥑","🧁"][Math.floor(Math.random()*5)],ingredients:ingredients.length?ingredients:["À compléter"],prep:prep.length?prep:["À compléter"],favorite:false,scheduledDate:""});
+ localStorage.setItem(KEY,JSON.stringify(recipes));["newTitle","newTime","newIngredients","newPrep"].forEach(id=>$("#"+id).value="");closeModal("addModal");nav("recipes")
 }
 $$("[data-nav]").forEach(b=>b.addEventListener("click",()=>nav(b.dataset.nav)));
-$$("[data-action='add']").forEach(b=>b.addEventListener("click",()=>openModal("addModal")));$$("[data-action='scan']").forEach(b=>b.addEventListener("click",()=>openModal("scanModal")));
+$$("[data-action='add']").forEach(b=>b.addEventListener("click",()=>openModal("addModal")));
 $("#menuBtn").onclick=()=>$("#drawer").classList.add("open");$("#closeDrawer").onclick=()=>$("#drawer").classList.remove("open");
 $$("[data-close]").forEach(b=>b.onclick=()=>closeModal(b.dataset.close));
 document.addEventListener("click",e=>{
@@ -101,47 +210,10 @@ $("#saveEditBtn").onclick=()=>{
  const r=recipes.find(x=>x.id==editId); if(!r)return;
  const title=$("#editTitle").value.trim(); if(!title){alert("Donne un nom à ta recette 😊");return}
  r.title=title; r.category=$("#editCategory").value; r.time=$("#editTime").value.trim()||"—";
- r.photo=pendingEditPhoto; r.ingredients=$("#editIngredients").value.split("\n").map(x=>x.trim()).filter(Boolean);
+ r.ingredients=$("#editIngredients").value.split("\n").map(x=>x.trim()).filter(Boolean);
  r.prep=$("#editPrep").value.split("\n").map(x=>x.trim()).filter(Boolean);
  if(!r.ingredients.length)r.ingredients=["À compléter"]; if(!r.prep.length)r.prep=["À compléter"];
  localStorage.setItem(KEY,JSON.stringify(recipes)); closeModal("editModal"); renderAll();
-};
-
-
-$("#newPhotoBtn").onclick=()=>$("#newPhoto").click();
-$("#newPhoto").onchange=()=>setPreview($("#newPhoto"),$("#newPhotoPreview"),v=>pendingNewPhoto=v);
-$("#editPhotoBtn").onclick=()=>$("#editPhoto").click();
-$("#editPhoto").onchange=()=>setPreview($("#editPhoto"),$("#editPhotoPreview"),v=>pendingEditPhoto=v);
-
-$("#scanPhotoBtn").onclick=()=>$("#scanPhoto").click();
-$("#scanPhoto").onchange=async()=>{
- const f=$("#scanPhoto").files?.[0]; if(!f)return;
- $("#scanPreview").src=await fileToDataURL(f); $("#scanPreview").hidden=false;
- $("#scanStatus").textContent="Lecture du texte en cours… ⏳";
- $("#scanText").value="";
- try{
-   if(!window.Tesseract) throw new Error("OCR indisponible");
-   const result=await Tesseract.recognize(f,"fra",{logger:m=>{
-     if(m.status==="recognizing text" && m.progress) $("#scanStatus").textContent=`Lecture du texte… ${Math.round(m.progress*100)} %`;
-   }});
-   $("#scanText").value=result.data.text.trim();
-   $("#scanStatus").textContent="Texte reconnu. Vérifie-le avant de l’ajouter. ✨";
- }catch(e){
-   $("#scanStatus").textContent="La lecture automatique n’a pas pu se faire. Tu peux tout de même saisir ou corriger le texte ci-dessous.";
- }
-};
-$("#useScanBtn").onclick=()=>{
- const text=$("#scanText").value.trim(); if(!text){alert("Prends d’abord une photo ou saisis le texte de la recette.");return}
- const lines=text.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
- const title=lines[0]||"Ma recette";
- const ingIndex=lines.findIndex(x=>/ingr[eé]dients?/i.test(x));
- const prepIndex=lines.findIndex(x=>/pr[ée]paration|pr[ée]parez|instructions?/i.test(x));
- let ingredients=ingIndex>=0?(lines.slice(ingIndex+1,prepIndex>ingIndex?prepIndex:lines.length)):lines.slice(1,Math.min(6,lines.length));
- let prep=prepIndex>=0?lines.slice(prepIndex+1):lines.slice(Math.max(1,ingredients.length+1));
- $("#newTitle").value=title;
- $("#newIngredients").value=ingredients.join("\n");
- $("#newPrep").value=prep.join("\n");
- closeModal("scanModal"); openModal("addModal");
 };
 
 $("#addRecipeBtn").onclick=addRecipe;
