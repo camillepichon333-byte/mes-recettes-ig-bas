@@ -18,128 +18,72 @@ function esc(s){return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&l
 function nav(name){
  $$(".screen").forEach(x=>x.classList.remove("active")); const id=name+"Screen"; const el=$("#"+id); if(el)el.classList.add("active");
  $$(".nav-item").forEach(x=>x.classList.toggle("active",x.dataset.nav===name)); window.scrollTo({top:0,behavior:"smooth"}); 
-// --- Scanner v2 : OCR amélioré, local, avec pré-traitement photo ---
+// --- Scanner v3 : assisté par Texte en direct de l’iPhone, sans OCR automatique ---
 (function(){
   let scanFile=null, scanObjectUrl=null;
 
-  function setProgress(n,msg){
-    $("#scanProgress").hidden=false; $("#scanProgressBar").style.width=n+"%"; $("#scanProgressText").textContent=msg;
-  }
   function showPreview(file){
     scanFile=file;
     if(scanObjectUrl) URL.revokeObjectURL(scanObjectUrl);
     scanObjectUrl=URL.createObjectURL(file);
     $("#scanPreview").innerHTML=`<img src="${scanObjectUrl}" alt="Aperçu de la recette">`;
-    $("#analyzeScanBtn").disabled=false;
-    $("#scanResult").hidden=true;
-    $("#scanProgress").hidden=true;
+    $("#liveTextHelp").hidden=false;
   }
 
-  function preprocess(file){
-    return new Promise((resolve,reject)=>{
-      const img=new Image();
-      img.onload=()=>{
-        const max=2200, scale=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));
-        const w=Math.max(1,Math.round(img.naturalWidth*scale)), h=Math.max(1,Math.round(img.naturalHeight*scale));
-        const c=document.createElement("canvas"); c.width=w;c.height=h;
-        const ctx=c.getContext("2d",{willReadFrequently:true});
-        ctx.drawImage(img,0,0,w,h);
-        const d=ctx.getImageData(0,0,w,h), a=d.data;
-        for(let i=0;i<a.length;i+=4){
-          const g=0.299*a[i]+0.587*a[i+1]+0.114*a[i+2];
-          const v=Math.max(0,Math.min(255,(g-128)*1.45+128));
-          a[i]=a[i+1]=a[i+2]=v;
-        }
-        ctx.putImageData(d,0,0);
-        c.toBlob(b=>b?resolve(b):reject(new Error("Image impossible à préparer")),"image/jpeg",.92);
-      };
-      img.onerror=()=>reject(new Error("Photo illisible"));
-      img.src=URL.createObjectURL(file);
-    });
-  }
-
-  function cleanText(t){
-    return t.replace(/\r/g,"\n")
-      .replace(/[ \t]+/g," ")
-      .replace(/\n{3,}/g,"\n\n")
-      .split("\n").map(x=>x.trim()).filter(Boolean).join("\n");
-  }
-  function linesBetween(lines,startRx,endRx){
-    let s=lines.findIndex(x=>startRx.test(x)), e=-1;
-    if(s<0)return [];
-    for(let i=s+1;i<lines.length;i++){if(endRx.test(lines[i])){e=i;break}}
-    return lines.slice(s+1,e<0?lines.length:e);
-  }
-  function parseRecipe(raw){
-    const text=cleanText(raw), lines=text.split("\n");
-    const ingredientRx=/^(ingr[eé]dients?|pour\s+\d|ingredients?)/i;
-    const prepRx=/^(pr[eé]paration|préparation|instructions?|étapes?|method|recette)/i;
-    const timeRx=/(?:temps|préparation|cuisson)\s*:?\s*(\d+\s*(?:min|minutes?|h|heures?))/i;
-    let title=(lines.find(x=>x.length>=5 && !ingredientRx.test(x) && !prepRx.test(x) && !/^\d+$/.test(x))||"Ma nouvelle recette").replace(/^[•·\-–—]\s*/,"");
-    let ing=linesBetween(lines,ingredientRx,prepRx);
-    let prep=linesBetween(lines,prepRx,/^(notes?|astuce|conseil|nutrition|valeurs?\s+nutritionnelles?)/i);
-    if(!ing.length){
-      const ix=lines.findIndex(x=>/^(?:•|-|–|—|\d+[.)])\s*/.test(x) && /(?:g|kg|ml|cl|l|c\.?\s*[àa]\s*(?:soupe|café)|cuillère|œuf|oeuf|poivre|sel|farine|huile|sucre|tomate|oignon)/i.test(x));
-      if(ix>=0) ing=lines.slice(ix,Math.min(ix+30, lines.length));
-    }
-    if(!prep.length){
-      const ix=lines.findIndex(x=>prepRx.test(x));
-      if(ix>=0) prep=lines.slice(ix+1);
-    }
-    const normalizeItems=a=>a.map(x=>x.replace(/^[•·\-–—]\s*/,"").replace(/^\d+[.)]\s*/,"").trim()).filter(x=>x.length>1);
-    ing=normalizeItems(ing); prep=normalizeItems(prep);
-    const tm=text.match(timeRx);
-    let category="Déjeuner";
-    if(/petit.?d[eé]jeuner|breakfast/i.test(text)) category="Petit-déjeuner";
-    else if(/d[iî]ner|soupe|velout[eé]/i.test(text)) category="Dîner";
-    else if(/dessert|g[aâ]teau|tarte|mousse/i.test(text)) category="Dessert";
-    return {title,category,time:tm?tm[1]:"",ingredients:ing,prep};
-  }
-
-  async function analyze(){
-    if(!scanFile)return;
-    try{
-      $("#analyzeScanBtn").disabled=true; setProgress(8,"Préparation de la photo…");
-      const img=await preprocess(scanFile);
-      setProgress(18,"Démarrage de la lecture…");
-      if(typeof Tesseract==="undefined") throw new Error("Le moteur de lecture n'est pas disponible. Vérifie ta connexion internet puis réessaie.");
-      const result=await Tesseract.recognize(img,"fra",{
-        logger:m=>{
-          if(m.status==="loading language traineddata") setProgress(25,"Chargement du français…");
-          else if(m.status==="recognizing text") setProgress(35+Math.round((m.progress||0)*55),"Lecture du texte…");
-        },
-        tessedit_pageseg_mode:"6"
-      });
-      const parsed=parseRecipe(result.data.text||"");
-      $("#scanTitle").value=parsed.title;
-      $("#scanCategory").value=parsed.category;
-      $("#scanTime").value=parsed.time;
-      $("#scanIngredients").value=parsed.ingredients.join("\n");
-      $("#scanPrep").value=parsed.prep.join("\n");
-      $("#scanResult").hidden=false;
-      setProgress(100,"Lecture terminée ✨");
-      $("#scanResult").scrollIntoView({behavior:"smooth",block:"start"});
-    }catch(e){
-      alert("Je n’arrive pas à lire correctement cette photo. Essaie avec la page bien droite, sans reflet, et avec une bonne lumière.");
-      console.error(e);
-      $("#scanProgress").hidden=true;
-    }finally{$("#analyzeScanBtn").disabled=false}
+  function resetScanner(){
+    scanFile=null;
+    if(scanObjectUrl){URL.revokeObjectURL(scanObjectUrl);scanObjectUrl=null;}
+    $("#scanPhoto").value="";
+    $("#scanPreview").innerHTML="";
+    $("#liveTextHelp").hidden=true;
+    $("#scanRawText").value="";
+    $("#scanTitle").value="";
+    $("#scanTime").value="";
+    $("#scanIngredients").value="";
+    $("#scanPrep").value="";
+    $("#scanCategory").value="Déjeuner";
   }
 
   $("#takeScanBtn").onclick=()=>$("#scanPhoto").click();
   $("#chooseScanBtn").onclick=()=>$("#scanPhoto").click();
-  $("#scanPhoto").onchange=e=>{const f=e.target.files&&e.target.files[0];if(f)showPreview(f)};
-  $("#analyzeScanBtn").onclick=analyze;
-  $$("[data-action='scan']").forEach(b=>b.addEventListener("click",()=>{openModal("scanModal");}));
+  $("#scanPhoto").onchange=e=>{
+    const f=e.target.files&&e.target.files[0];
+    if(f) showPreview(f);
+  };
+
+  // We intentionally do not parse the pasted text automatically.
+  // The user can paste it, then manually copy the exact pieces into the recipe fields.
+  $("#clearScanTextBtn").onclick=()=>{
+    $("#scanRawText").value="";
+    $("#scanTitle").focus();
+  };
+
+  $$("[data-action='scan']").forEach(b=>b.addEventListener("click",()=>{
+    resetScanner();
+    openModal("scanModal");
+  }));
+
   $("#useScanBtn").onclick=()=>{
     const title=$("#scanTitle").value.trim();
     if(!title){alert("Donne un nom à ta recette 😊");return}
     const ingredients=$("#scanIngredients").value.split("\n").map(x=>x.trim()).filter(Boolean);
     const prep=$("#scanPrep").value.split("\n").map(x=>x.trim()).filter(Boolean);
-    recipes.unshift({id:Date.now(),title,category:$("#scanCategory").value,time:$("#scanTime").value.trim()||"—",difficulty:"Facile",art:"🍽️",ingredients:ingredients.length?ingredients:["À compléter"],prep:prep.length?prep:["À compléter"],favorite:false,scheduledDate:""});
+    recipes.unshift({
+      id:Date.now(),
+      title,
+      category:$("#scanCategory").value,
+      time:$("#scanTime").value.trim()||"—",
+      difficulty:"Facile",
+      art:"🍽️",
+      ingredients:ingredients.length?ingredients:["À compléter"],
+      prep:prep.length?prep:["À compléter"],
+      favorite:false,
+      scheduledDate:""
+    });
     save();
-    closeModal("scanModal"); nav("recipes");
-    $("#scanPhoto").value=""; $("#scanPreview").innerHTML=""; $("#scanResult").hidden=true; $("#scanProgress").hidden=true; scanFile=null;
+    closeModal("scanModal");
+    nav("recipes");
+    resetScanner();
   };
 })();
 

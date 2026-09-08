@@ -228,21 +228,49 @@
     <div class="modal-card scanner-card">
       <button class="close-btn" data-close="scanModal">×</button>
       <span class="eyebrow">📷 Mon scanner de recettes</span>
-      <h2>Photographier une recette</h2>
-      <p class="scanner-intro">Prends une photo bien droite et lisible. Le texte est lu <b>sur ton téléphone</b>, puis tu peux tout corriger avant d’enregistrer.</p>
+      <h2>Scanner sans analyse automatique</h2>
+
+      <div class="scanner-steps">
+        <div class="scan-step"><b>1</b><span>Photographie la recette</span></div>
+        <div class="scan-step"><b>2</b><span>Utilise <strong>Texte en direct</strong> sur ton iPhone</span></div>
+        <div class="scan-step"><b>3</b><span>Colle le texte ici et vérifie</span></div>
+      </div>
+
+      <p class="scanner-intro">
+        Cette version ne devine plus les ingrédients ni les étapes. Elle te laisse utiliser
+        la reconnaissance de texte de l’iPhone, puis tu contrôles chaque information avant de l’enregistrer.
+      </p>
+
       <input id="scanPhoto" type="file" accept="image/*" capture="environment" hidden>
       <button class="primary-btn" id="takeScanBtn">📸 Prendre une photo</button>
       <button class="secondary-btn" id="chooseScanBtn">🖼️ Choisir une photo</button>
       <div id="scanPreview" class="scan-preview"></div>
-      <div id="scanProgress" class="scan-progress" hidden>
-        <div class="progress-track"><span id="scanProgressBar"></span></div>
-        <p id="scanProgressText">Lecture du texte…</p>
+
+      <div class="live-text-help" id="liveTextHelp" hidden>
+        <strong>🍎 Maintenant avec ton iPhone :</strong>
+        <ol>
+          <li>Ouvre la photo dans l’app <b>Photos</b>.</li>
+          <li>Maintiens ton doigt sur un morceau de texte.</li>
+          <li>Choisis <b>Tout sélectionner</b>, puis <b>Copier</b>.</li>
+          <li>Reviens ici et colle le texte ci-dessous.</li>
+        </ol>
       </div>
-      <button class="primary-btn" id="analyzeScanBtn" disabled>✨ Lire cette recette</button>
-      <div id="scanResult" hidden>
-        <div class="scanner-tip">💡 Vérifie toujours les quantités et les étapes avant d’enregistrer.</div>
-        <label>Nom de la recette
-          <input id="scanTitle" placeholder="Nom de la recette">
+
+      <label>Texte de la recette
+        <textarea id="scanRawText" class="scan-raw-text"
+          placeholder="Colle ici le texte copié avec « Texte en direct » sur ton iPhone…"></textarea>
+      </label>
+
+      <div class="scanner-tip">
+        💡 <b>Astuce :</b> tu peux coller toute la page. Rien ne sera enregistré automatiquement.
+        Tu remplis ensuite les champs de la recette tranquillement.
+      </div>
+
+      <button class="secondary-btn" id="clearScanTextBtn">↺ Effacer le texte</button>
+
+      <div id="scanResult">
+        <label>Nom de la recette *
+          <input id="scanTitle" placeholder="Ex : Poulet citron & courgettes">
         </label>
         <label>Catégorie
           <select id="scanCategory">
@@ -260,7 +288,11 @@
         </label>
         <button class="primary-btn" id="useScanBtn">💗 Ajouter à mon carnet</button>
       </div>
-      <p class="scanner-note">Astuce : pour une page avec deux colonnes, photographie une colonne à la fois pour un meilleur résultat.</p>
+
+      <p class="scanner-note">
+        🌷 Le but de cette version est la fiabilité : l’iPhone reconnaît le texte,
+        et <b>toi</b> tu gardes le contrôle sur ce qui entre dans ton carnet.
+      </p>
     </div>
   </div>
 
@@ -278,7 +310,6 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

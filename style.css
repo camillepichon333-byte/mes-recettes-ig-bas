@@ -16,3 +16,13 @@
 #scanProgressText{font-size:13px;text-align:center;color:#7c656c;margin:8px 0}
 .scanner-tip{background:#fff5e7;border-radius:14px;padding:11px 12px;font-size:12px;line-height:1.45;margin:10px 0 14px}
 @media(max-width:430px){.scan-card{grid-column:span 2}}
+
+
+/* Scanner V3 — parcours assisté, sans analyse automatique */
+.scanner-steps{display:grid;gap:9px;margin:14px 0 16px}
+.scan-step{display:flex;align-items:center;gap:10px;background:#fffaf7;border:1px solid rgba(110,75,85,.10);border-radius:15px;padding:10px 12px;font-size:13px}
+.scan-step b{display:grid;place-items:center;width:27px;height:27px;border-radius:50%;background:#f2dce3;color:#6e4b55;flex:none}
+.live-text-help{margin:12px 0;padding:14px;background:#f7f1df;border-radius:16px;font-size:13px;line-height:1.5}
+.live-text-help ol{margin:8px 0 0 20px;padding:0}
+.scan-raw-text{min-height:150px}
+.scanner-card .secondary-btn{margin-top:8px}
