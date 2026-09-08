@@ -7,13 +7,22 @@ const seed=[
  {id:4,title:"Saumon aux herbes vapeur",category:"Dîner",time:"30 min",difficulty:"Moyen",art:"🐟",ingredients:["1 pavé de saumon","Citron","Herbes fraîches","Courgette"],prep:["Déposer le saumon avec les herbes et le citron.","Cuire à la vapeur 12 à 15 minutes.","Servir avec la courgette."],favorite:false,scheduledDate:""}
 ];
 let recipes=JSON.parse(localStorage.getItem(KEY)||"null")||seed;
-// La bibliothèque originale est ajoutée automatiquement une seule fois.
-// Les recettes déjà présentes (y compris celles de l’utilisatrice) sont conservées.
+// Bibliothèque IG bas originale — version 2.
+// Elle remplace l’ancienne bibliothèque artificiellement déclinée et ajoute
+// 500 recettes réellement distinctes à côté des recettes personnelles.
 function ensureOriginalLibrary(){
-  if(typeof originalLibrary==="undefined"||!Array.isArray(originalLibrary)||!originalLibrary.length)return;
-  const existing=new Set(recipes.map(r=>String(r.title||"").trim().toLowerCase()));
-  const missing=originalLibrary.filter(r=>{const k=String(r.title||"").trim().toLowerCase();return k&&!existing.has(k)}).map(r=>({...r}));
-  if(missing.length){recipes=[...missing,...recipes];localStorage.setItem(KEY,JSON.stringify(recipes));}
+  if(typeof originalLibrary==="undefined"||!Array.isArray(originalLibrary)||originalLibrary.length!==500)return;
+  const LIB_VERSION="camille-ig-bas-originales-v2";
+  const oldIds=new Set(Array.from({length:500},(_,i)=>10001+i));
+  if(localStorage.getItem("ig_bas_library_version")!==LIB_VERSION){
+    recipes=recipes.filter(r=>!oldIds.has(Number(r.id)));
+    const existing=new Set(recipes.map(r=>String(r.title||"").trim().toLowerCase()));
+    const missing=originalLibrary.filter(r=>!existing.has(String(r.title||"").trim().toLowerCase()))
+      .map((r,i)=>({...r,id:20001+i}));
+    recipes=[...missing,...recipes];
+    localStorage.setItem(KEY,JSON.stringify(recipes));
+    localStorage.setItem("ig_bas_library_version",LIB_VERSION);
+  }
 }
 ensureOriginalLibrary();
 let currentCategory="Toutes", selectedDate=todayISO(), calDate=new Date();
@@ -180,7 +189,7 @@ $("#removeEditPhotoBtn").addEventListener("click",e=>{
  pendingEditPhoto=""; $("#editPhoto").value=""; setPhotoPreview("editPhotoPreview","");
 });
 
-$("#saveEditBtn").addEventListener("click",(e)=>{
+function saveEditedRecipe(e){
  e.preventDefault(); e.stopPropagation();
  const r=recipes.find(x=>x.id==editId); if(!r)return;
  const title=$("#editTitle").value.trim(); if(!title){alert("Donne un nom à ta recette 😊");return}
@@ -196,7 +205,8 @@ $("#saveEditBtn").addEventListener("click",(e)=>{
  closeModal("editModal");
  renderAll();
  editId=null;
-});
+}
+$("#saveEditBtn").addEventListener("click",saveEditedRecipe);
 
 $("#addRecipeBtn").onclick=addRecipe;
 
