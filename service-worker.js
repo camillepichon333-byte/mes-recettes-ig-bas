@@ -1,4 +1,4 @@
-const CACHE='mes-recettes-ig-bas-bibliotheque-v16';
+const CACHE='mes-recettes-ig-bas-bibliotheque-v17';
 const ASSETS=[
   './',
   './index.html',

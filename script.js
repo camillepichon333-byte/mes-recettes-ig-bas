@@ -12,7 +12,7 @@ let recipes=JSON.parse(localStorage.getItem(KEY)||"null")||seed;
 // 500 recettes réellement distinctes à côté des recettes personnelles.
 function ensureOriginalLibrary(){
   if(typeof originalLibrary==="undefined"||!Array.isArray(originalLibrary)||originalLibrary.length!==500)return;
-  const LIB_VERSION="camille-ig-bas-originales-v2";
+  const LIB_VERSION="camille-ig-bas-originales-v3";
   const oldIds=new Set(Array.from({length:500},(_,i)=>10001+i));
   if(localStorage.getItem("ig_bas_library_version")!==LIB_VERSION){
     recipes=recipes.filter(r=>!oldIds.has(Number(r.id)));
