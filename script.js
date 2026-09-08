@@ -7,16 +7,15 @@ const seed=[
  {id:4,title:"Saumon aux herbes vapeur",category:"Dîner",time:"30 min",difficulty:"Moyen",art:"🐟",ingredients:["1 pavé de saumon","Citron","Herbes fraîches","Courgette"],prep:["Déposer le saumon avec les herbes et le citron.","Cuire à la vapeur 12 à 15 minutes.","Servir avec la courgette."],favorite:false,scheduledDate:""}
 ];
 let recipes=JSON.parse(localStorage.getItem(KEY)||"null")||seed;
-// V11 : au premier lancement, on ajoute automatiquement les 500 recettes originales.
-// Les recettes personnelles déjà présentes sont conservées.
-const LIBRARY_FLAG="igbas_library_v11_installed";
-if(!localStorage.getItem(LIBRARY_FLAG)){
+// La bibliothèque originale est ajoutée automatiquement une seule fois.
+// Les recettes déjà présentes (y compris celles de l’utilisatrice) sont conservées.
+function ensureOriginalLibrary(){
+  if(typeof originalLibrary==="undefined"||!Array.isArray(originalLibrary)||!originalLibrary.length)return;
   const existing=new Set(recipes.map(r=>String(r.title||"").trim().toLowerCase()));
-  const missing=originalLibrary.filter(r=>!existing.has(String(r.title||"").trim().toLowerCase())).map(r=>({...r}));
-  if(missing.length) recipes=[...missing,...recipes];
-  localStorage.setItem(KEY,JSON.stringify(recipes));
-  localStorage.setItem(LIBRARY_FLAG,"1");
+  const missing=originalLibrary.filter(r=>{const k=String(r.title||"").trim().toLowerCase();return k&&!existing.has(k)}).map(r=>({...r}));
+  if(missing.length){recipes=[...missing,...recipes];localStorage.setItem(KEY,JSON.stringify(recipes));}
 }
+ensureOriginalLibrary();
 let currentCategory="Toutes", selectedDate=todayISO(), calDate=new Date();
 let scheduleId=null, editId=null, pendingNewPhoto="", pendingEditPhoto="";
 
@@ -31,6 +30,7 @@ function esc(s){return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&l
 function nav(name){
  $$(".screen").forEach(x=>x.classList.remove("active")); const id=name+"Screen"; const el=$("#"+id); if(el)el.classList.add("active");
  $$(".nav-item").forEach(x=>x.classList.toggle("active",x.dataset.nav===name)); window.scrollTo({top:0,behavior:"smooth"}); 
+}
 // --- Scanner v3 : assisté par Texte en direct de l’iPhone, sans OCR automatique ---
 (function(){
   let scanFile=null, scanObjectUrl=null, scanRecipePhoto="";
@@ -102,8 +102,7 @@ function nav(name){
   };
 })();
 
-renderAll();
-}
+
 function recipeCard(r){
  const art=r.photo?`<img src="${r.photo}" alt="Photo de ${esc(r.title)}">`:(r.art||"🍽️");
  return `<article class="recipe-card" data-id="${r.id}">
@@ -234,7 +233,6 @@ $("#importData").addEventListener("change",async e=>{
    if(!data || !Array.isArray(data.recipes)) throw new Error("format");
    if(!confirm("Restaurer cette sauvegarde remplacera le carnet actuel par celui du fichier. Continuer ?")){e.target.value="";return}
    recipes=data.recipes;
-   localStorage.setItem(LIBRARY_FLAG,"1");
    save();
    renderAll();
    alert("💗 Ton carnet a bien été restauré !");
