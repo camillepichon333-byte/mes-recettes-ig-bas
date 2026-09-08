@@ -7,6 +7,16 @@ const seed=[
  {id:4,title:"Saumon aux herbes vapeur",category:"Dîner",time:"30 min",difficulty:"Moyen",art:"🐟",ingredients:["1 pavé de saumon","Citron","Herbes fraîches","Courgette"],prep:["Déposer le saumon avec les herbes et le citron.","Cuire à la vapeur 12 à 15 minutes.","Servir avec la courgette."],favorite:false,scheduledDate:""}
 ];
 let recipes=JSON.parse(localStorage.getItem(KEY)||"null")||seed;
+// V11 : au premier lancement, on ajoute automatiquement les 500 recettes originales.
+// Les recettes personnelles déjà présentes sont conservées.
+const LIBRARY_FLAG="igbas_library_v11_installed";
+if(!localStorage.getItem(LIBRARY_FLAG)){
+  const existing=new Set(recipes.map(r=>String(r.title||"").trim().toLowerCase()));
+  const missing=originalLibrary.filter(r=>!existing.has(String(r.title||"").trim().toLowerCase())).map(r=>({...r}));
+  if(missing.length) recipes=[...missing,...recipes];
+  localStorage.setItem(KEY,JSON.stringify(recipes));
+  localStorage.setItem(LIBRARY_FLAG,"1");
+}
 let currentCategory="Toutes", selectedDate=todayISO(), calDate=new Date();
 let scheduleId=null, editId=null, pendingNewPhoto="", pendingEditPhoto="";
 
@@ -224,6 +234,7 @@ $("#importData").addEventListener("change",async e=>{
    if(!data || !Array.isArray(data.recipes)) throw new Error("format");
    if(!confirm("Restaurer cette sauvegarde remplacera le carnet actuel par celui du fichier. Continuer ?")){e.target.value="";return}
    recipes=data.recipes;
+   localStorage.setItem(LIBRARY_FLAG,"1");
    save();
    renderAll();
    alert("💗 Ton carnet a bien été restauré !");
