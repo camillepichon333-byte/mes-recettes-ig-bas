@@ -6,11 +6,11 @@
   <meta name="theme-color" content="#fff8f1">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Mes recettes IG bas">
+  <meta name="apple-mobile-web-app-title" content="Les recettes IG bas de Camille">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="stylesheet" href="style.css">
-  <title>Mes recettes IG bas</title>
+  <title>Les recettes IG bas de Camille</title>
 </head>
 <body>
   <div class="app-shell">
@@ -175,7 +175,9 @@
       <button class="close-btn" data-close="addModal">×</button>
       <span class="eyebrow">🌷 Une nouvelle idée</span>
       <h2>Ajouter une recette</h2>
-      <div class="upload-art">📷<small>Ajouter une photo</small></div>
+      <input id="newPhoto" type="file" accept="image/*" capture="environment" hidden>
+      <button type="button" class="photo-picker" id="newPhotoBtn">📸 Ajouter une photo</button>
+      <div id="newPhotoPreview" class="recipe-photo-preview"></div>
       <label>Nom de la recette *
         <input id="newTitle" placeholder="Ex : Bowl avocat & saumon">
       </label>
@@ -203,6 +205,10 @@
       <button class="close-btn" data-close="editModal">×</button>
       <span class="eyebrow">✏️ Modifier mon idée</span>
       <h2>Modifier la recette</h2>
+      <input id="editPhoto" type="file" accept="image/*" capture="environment" hidden>
+      <button type="button" class="photo-picker" id="editPhotoBtn">📸 Changer la photo</button>
+      <button type="button" class="secondary-btn photo-remove" id="removeEditPhotoBtn">🗑️ Retirer la photo</button>
+      <div id="editPhotoPreview" class="recipe-photo-preview"></div>
       <label>Nom de la recette *
         <input id="editTitle">
       </label>
@@ -244,7 +250,7 @@
       <input id="scanPhoto" type="file" accept="image/*" capture="environment" hidden>
       <button class="primary-btn" id="takeScanBtn">📸 Prendre une photo</button>
       <button class="secondary-btn" id="chooseScanBtn">🖼️ Choisir une photo</button>
-      <div id="scanPreview" class="scan-preview"></div>
+      <div id="scanPreview" class="scan-preview"></div><div id="scanRecipePhotoPreview" class="recipe-photo-preview"></div>
 
       <div class="live-text-help" id="liveTextHelp" hidden>
         <strong>🍎 Maintenant avec ton iPhone :</strong>
@@ -300,7 +306,7 @@
     <div class="drawer-inner">
       <button class="close-btn" id="closeDrawer">×</button>
       <div class="drawer-logo">🌿</div>
-      <h2>Mes recettes IG bas</h2>
+      <h2>Les recettes IG bas de Camille</h2>
       <p>Mon petit carnet gourmand</p>
       <button data-nav="home">⌂ Accueil</button>
       <button data-nav="recipes">▤ Mes recettes</button>

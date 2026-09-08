@@ -8,7 +8,10 @@ const seed=[
 ];
 let recipes=JSON.parse(localStorage.getItem(KEY)||"null")||seed;
 let currentCategory="Toutes", selectedDate=todayISO(), calDate=new Date();
-let scheduleId=null, editId=null;
+let scheduleId=null, editId=null, pendingNewPhoto="", pendingEditPhoto="";
+
+function imageToDataURL(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>{const img=new Image();img.onload=()=>{const max=1200,scale=Math.min(1,max/Math.max(img.width,img.height));const c=document.createElement("canvas");c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);c.getContext("2d").drawImage(img,0,0,c.width,c.height);resolve(c.toDataURL("image/jpeg",0.82))};img.onerror=reject;img.src=reader.result};reader.onerror=reject;reader.readAsDataURL(file)})}
+function setPhotoPreview(id,data){const el=$("#"+id);if(el)el.innerHTML=data?`<img src="${data}" alt="Photo de recette">`:""}
 
 function pad(n){return String(n).padStart(2,"0")}
 function todayISO(){const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`}
@@ -20,10 +23,11 @@ function nav(name){
  $$(".nav-item").forEach(x=>x.classList.toggle("active",x.dataset.nav===name)); window.scrollTo({top:0,behavior:"smooth"}); 
 // --- Scanner v3 : assisté par Texte en direct de l’iPhone, sans OCR automatique ---
 (function(){
-  let scanFile=null, scanObjectUrl=null;
+  let scanFile=null, scanObjectUrl=null, scanRecipePhoto="";
 
   function showPreview(file){
     scanFile=file;
+    imageToDataURL(file).then(data=>{scanRecipePhoto=data;setPhotoPreview("scanRecipePhotoPreview",data)});
     if(scanObjectUrl) URL.revokeObjectURL(scanObjectUrl);
     scanObjectUrl=URL.createObjectURL(file);
     $("#scanPreview").innerHTML=`<img src="${scanObjectUrl}" alt="Aperçu de la recette">`;
@@ -75,6 +79,7 @@ function nav(name){
       time:$("#scanTime").value.trim()||"—",
       difficulty:"Facile",
       art:"🍽️",
+      photo:scanRecipePhoto,
       ingredients:ingredients.length?ingredients:["À compléter"],
       prep:prep.length?prep:["À compléter"],
       favorite:false,
@@ -90,8 +95,9 @@ function nav(name){
 renderAll();
 }
 function recipeCard(r){
+ const art=r.photo?`<img src="${r.photo}" alt="Photo de ${esc(r.title)}">`:(r.art||"🍽️");
  return `<article class="recipe-card" data-id="${r.id}">
-   <div class="food-art">${r.art||"🍽️"}</div>
+   <div class="food-art ${r.photo?"has-photo":""}">${art}</div>
    <div class="recipe-info"><span class="category-pill">${esc(r.category)}</span><h3>${esc(r.title)}</h3><p>${esc(r.ingredients.slice(0,3).join(" • "))}</p><div class="meta"><span>◷ ${esc(r.time||"—")}</span><span>♨ ${esc(r.difficulty||"Facile")}</span></div><div class="recipe-actions"><button class="mini-action edit-action" data-edit="${r.id}">✏️ Modifier</button><button class="mini-action delete-action" data-delete="${r.id}">🗑️ Supprimer</button></div></div>
    <button class="fav" data-fav="${r.id}">${r.favorite?"♥":"♡"}</button>
  </article>`
@@ -103,14 +109,14 @@ function renderHome(){const q=$("#homeSearch")?.value||"";let arr=recipes.filter
 function renderFavorites(){renderList($("#favoriteList"),recipes.filter(r=>r.favorite),"Tu n’as pas encore de favori. Appuie sur ♡ sur une recette.")}
 function renderStats(){$("#statRecipes").textContent=recipes.length;$("#statFavs").textContent=recipes.filter(r=>r.favorite).length;$("#statCalendar").textContent=recipes.filter(r=>r.scheduledDate).length}
 function formatDate(iso){if(!iso)return "";return new Intl.DateTimeFormat("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric"}).format(new Date(iso+"T12:00:00"))}
-function openDetail(id){const r=recipes.find(x=>x.id==id);if(!r)return;$("#detailContent").innerHTML=`<div class="detail-art">${r.art||"🍽️"}</div><div class="label-row"><span class="info-pill">${esc(r.category)}</span><span class="info-pill">◷ ${esc(r.time||"—")}</span><span class="info-pill">♨ ${esc(r.difficulty||"Facile")}</span></div><h2>${esc(r.title)}</h2>${r.scheduledDate?`<div class="info-pill">🗓️ ${formatDate(r.scheduledDate)}</div>`:""}<h3>🌿 Ingrédients</h3><ul>${r.ingredients.map(x=>`<li>${esc(x)}</li>`).join("")}</ul><h3>🥣 Préparation</h3><ol>${r.prep.map(x=>`<li>${esc(x)}</li>`).join("")}</ol><button class="primary-btn" onclick="openSchedule(${r.id});closeModal('detailModal')">🗓️ Ajouter au calendrier</button>`;openModal("detailModal")}
+function openDetail(id){const r=recipes.find(x=>x.id==id);if(!r)return;const art=r.photo?`<img src="${r.photo}" alt="Photo de ${esc(r.title)}">`:(r.art||"🍽️");$("#detailContent").innerHTML=`<div class="detail-art ${r.photo?"has-photo":""}">${art}</div><div class="label-row"><span class="info-pill">${esc(r.category)}</span><span class="info-pill">◷ ${esc(r.time||"—")}</span><span class="info-pill">♨ ${esc(r.difficulty||"Facile")}</span></div><h2>${esc(r.title)}</h2>${r.scheduledDate?`<div class="info-pill">🗓️ ${formatDate(r.scheduledDate)}</div>`:""}<h3>🌿 Ingrédients</h3><ul>${r.ingredients.map(x=>`<li>${esc(x)}</li>`).join("")}</ul><h3>🥣 Préparation</h3><ol>${r.prep.map(x=>`<li>${esc(x)}</li>`).join("")}</ol><button class="primary-btn" onclick="openSchedule(${r.id});closeModal('detailModal')">🗓️ Ajouter au calendrier</button>`;openModal("detailModal")}
 function openSchedule(id){const r=recipes.find(x=>x.id==id);if(!r)return;scheduleId=id;$("#scheduleTitle").textContent=r.title;$("#scheduleDate").value=r.scheduledDate||selectedDate||todayISO();openModal("scheduleModal")}
 function openModal(id){$("#"+id).classList.add("open")}
 function closeModal(id){$("#"+id).classList.remove("open")}
 
 function openEdit(id){
  const r=recipes.find(x=>x.id==id); if(!r)return;
- editId=id; $("#editTitle").value=r.title; $("#editCategory").value=r.category||"Déjeuner"; $("#editTime").value=r.time||""; $("#editIngredients").value=(r.ingredients||[]).join("\n"); $("#editPrep").value=(r.prep||[]).join("\n"); openModal("editModal");
+ editId=id; pendingEditPhoto=r.photo||""; $("#editTitle").value=r.title; $("#editCategory").value=r.category||"Déjeuner"; $("#editTime").value=r.time||""; $("#editIngredients").value=(r.ingredients||[]).join("\n"); $("#editPrep").value=(r.prep||[]).join("\n"); setPhotoPreview("editPhotoPreview",pendingEditPhoto); openModal("editModal");
 }
 function deleteRecipe(id){
  const r=recipes.find(x=>x.id==id); if(!r)return;
@@ -127,11 +133,11 @@ function yyFor(y,m){return new Date(y,m,1).getFullYear()}
 function mmDate(m){return new Date(calDate.getFullYear(),m,1).getMonth()+1}
 function renderDay(){const arr=recipes.filter(r=>r.scheduledDate===selectedDate);$("#selectedDateTitle").textContent=`📌 ${formatDate(selectedDate)}`;renderList($("#dayRecipes"),arr,"Aucune recette programmée ce jour.")}
 function renderAll(){renderHome();renderRecipes();renderFavorites();renderStats();renderCalendar()}
-function addRecipe(){
+async function addRecipe(){
  const title=$("#newTitle").value.trim();if(!title){alert("Donne un nom à ta recette 😊");return}
  const ingredients=$("#newIngredients").value.split("\n").map(x=>x.trim()).filter(Boolean);const prep=$("#newPrep").value.split("\n").map(x=>x.trim()).filter(Boolean);
- recipes.unshift({id:Date.now(),title,category:$("#newCategory").value,time:$("#newTime").value.trim()||"—",difficulty:"Facile",art:["🥗","🍲","🍓","🥑","🧁"][Math.floor(Math.random()*5)],ingredients:ingredients.length?ingredients:["À compléter"],prep:prep.length?prep:["À compléter"],favorite:false,scheduledDate:""});
- localStorage.setItem(KEY,JSON.stringify(recipes));["newTitle","newTime","newIngredients","newPrep"].forEach(id=>$("#"+id).value="");closeModal("addModal");nav("recipes")
+ recipes.unshift({id:Date.now(),title,category:$("#newCategory").value,time:$("#newTime").value.trim()||"—",difficulty:"Facile",art:["🥗","🍲","🍓","🥑","🧁"][Math.floor(Math.random()*5)],photo:pendingNewPhoto,ingredients:ingredients.length?ingredients:["À compléter"],prep:prep.length?prep:["À compléter"],favorite:false,scheduledDate:""});
+ save();["newTitle","newTime","newIngredients","newPrep"].forEach(id=>$("#"+id).value="");$("#newPhoto").value="";pendingNewPhoto="";setPhotoPreview("newPhotoPreview","");closeModal("addModal");nav("recipes")
 }
 $$("[data-nav]").forEach(b=>b.addEventListener("click",()=>nav(b.dataset.nav)));
 $$("[data-action='add']").forEach(b=>b.addEventListener("click",()=>openModal("addModal")));
@@ -150,11 +156,18 @@ $("#prevMonth").onclick=()=>{calDate.setMonth(calDate.getMonth()-1);renderCalend
 $("#saveSchedule").onclick=()=>{const r=recipes.find(x=>x.id==scheduleId);if(r){r.scheduledDate=$("#scheduleDate").value;selectedDate=r.scheduledDate;save();closeModal("scheduleModal");nav("calendar")}};
 $("#removeSchedule").onclick=()=>{const r=recipes.find(x=>x.id==scheduleId);if(r){r.scheduledDate="";save();closeModal("scheduleModal");nav("calendar")}};
 
+$("#newPhotoBtn").onclick=()=>$("#newPhoto").click();
+$("#newPhoto").onchange=async e=>{const f=e.target.files&&e.target.files[0];if(f){pendingNewPhoto=await imageToDataURL(f);setPhotoPreview("newPhotoPreview",pendingNewPhoto)}};
+$("#editPhotoBtn").onclick=()=>$("#editPhoto").click();
+$("#editPhoto").onchange=async e=>{const f=e.target.files&&e.target.files[0];if(f){pendingEditPhoto=await imageToDataURL(f);setPhotoPreview("editPhotoPreview",pendingEditPhoto)}};
+$("#removeEditPhotoBtn").onclick=()=>{pendingEditPhoto="";$("#editPhoto").value="";setPhotoPreview("editPhotoPreview","")};
+
 $("#saveEditBtn").onclick=()=>{
  const r=recipes.find(x=>x.id==editId); if(!r)return;
  const title=$("#editTitle").value.trim(); if(!title){alert("Donne un nom à ta recette 😊");return}
  r.title=title; r.category=$("#editCategory").value; r.time=$("#editTime").value.trim()||"—";
  r.ingredients=$("#editIngredients").value.split("\n").map(x=>x.trim()).filter(Boolean);
+ r.photo=pendingEditPhoto;
  r.prep=$("#editPrep").value.split("\n").map(x=>x.trim()).filter(Boolean);
  if(!r.ingredients.length)r.ingredients=["À compléter"]; if(!r.prep.length)r.prep=["À compléter"];
  localStorage.setItem(KEY,JSON.stringify(recipes)); closeModal("editModal"); renderAll();

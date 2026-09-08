@@ -1,4 +1,4 @@
-const CACHE='mes-recettes-ig-bas-v9';
+const CACHE='mes-recettes-ig-bas-final-v11';
 const ASSETS=[
   './',
   './index.html',
