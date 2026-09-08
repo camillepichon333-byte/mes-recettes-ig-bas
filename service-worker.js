@@ -1,12 +1,12 @@
-const CACHE='mes-recettes-ig-bas-final-v11';
+const CACHE='mes-recettes-ig-bas-logo-v12';
 const ASSETS=[
   './',
   './index.html',
   './style.css',
   './script.js',
   './manifest.json',
-  './icon-192.png',
-  './icon-512.png'
+  './logo-camille-192.png',
+  './logo-camille-512.png'
 ];
 
 self.addEventListener('install', event=>{

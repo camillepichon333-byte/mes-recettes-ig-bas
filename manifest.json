@@ -8,12 +8,12 @@
   "description": "Mon petit carnet de recettes IG bas.",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "logo-camille-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "icon-512.png",
+      "src": "logo-camille-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
