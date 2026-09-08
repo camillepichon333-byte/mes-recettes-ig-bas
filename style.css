@@ -26,3 +26,5 @@
 .live-text-help ol{margin:8px 0 0 20px;padding:0}
 .scan-raw-text{min-height:150px}
 .scanner-card .secondary-btn{margin-top:8px}
+
+.app-version{position:fixed;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;opacity:.35;z-index:20;pointer-events:none}
