@@ -1,9 +1,10 @@
-const CACHE='mes-recettes-ig-bas-logo-v13';
+const CACHE='mes-recettes-ig-bas-bibliotheque-v16';
 const ASSETS=[
   './',
   './index.html',
   './style.css',
   './script.js',
+  './original-library.js',
   './manifest.json',
   './logo-camille-192.png',
   './logo-camille-512.png'

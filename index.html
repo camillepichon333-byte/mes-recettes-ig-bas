@@ -83,6 +83,13 @@
           <button class="chip" data-category="Déjeuner">Déjeuner</button>
           <button class="chip" data-category="Dîner">Dîner</button>
           <button class="chip" data-category="Dessert">Dessert</button>
+          <button class="chip" data-category="Soupe">Soupes</button>
+          <button class="chip" data-category="Poisson">Poissons</button>
+          <button class="chip" data-category="Viande">Viandes</button>
+          <button class="chip" data-category="Légumes">Légumes</button>
+          <button class="chip" data-category="Céréales & quinoa">Céréales</button>
+          <button class="chip" data-category="Œufs & veggie">Œufs & veggie</button>
+          <button class="chip" data-category="Repas express">Express</button>
         </div>
         <div class="search-box compact">
           <span>⌕</span><input id="recipeSearch" type="search" placeholder="Rechercher une recette...">
@@ -139,6 +146,10 @@
           <button data-nav="favorites"><span>♡</span><b>Mes favoris</b><i>›</i></button>
           <button data-nav="recipes"><span>📖</span><b>Mes recettes</b><i>›</i></button>
           <button data-nav="calendar"><span>🗓️</span><b>Mon calendrier</b><i>›</i></button>
+          <button id="addLibrary"><span>✨</span><b>Ajouter 500 recettes originales</b><i>›</i></button>
+          <button id="exportData"><span>💾</span><b>Sauvegarder mon carnet</b><i>›</i></button>
+          <button id="importDataBtn"><span>📥</span><b>Restaurer mon carnet</b><i>›</i></button>
+          <input id="importData" type="file" accept=".json,application/json" class="photo-input">
           <button id="clearData"><span>🧹</span><b>Réinitialiser les données</b><i>›</i></button>
         </div>
         <div class="profile-quote">🌷 « De bonnes recettes,<br>du plaisir et de la simplicité. » 🌷</div>
@@ -319,6 +330,7 @@
     </div>
   </div>
 
+  <script src="original-library.js"></script>
   <script src="script.js"></script>
 <div class="app-version">Scanner V3 • version fraîche</div>
 </body>

@@ -156,24 +156,80 @@ $("#prevMonth").onclick=()=>{calDate.setMonth(calDate.getMonth()-1);renderCalend
 $("#saveSchedule").onclick=()=>{const r=recipes.find(x=>x.id==scheduleId);if(r){r.scheduledDate=$("#scheduleDate").value;selectedDate=r.scheduledDate;save();closeModal("scheduleModal");nav("calendar")}};
 $("#removeSchedule").onclick=()=>{const r=recipes.find(x=>x.id==scheduleId);if(r){r.scheduledDate="";save();closeModal("scheduleModal");nav("calendar")}};
 
-$("#newPhotoBtn").onclick=()=>$("#newPhoto").click();
-$("#newPhoto").onchange=async e=>{const f=e.target.files&&e.target.files[0];if(f){pendingNewPhoto=await imageToDataURL(f);setPhotoPreview("newPhotoPreview",pendingNewPhoto)}};
-$("#editPhotoBtn").onclick=()=>$("#editPhoto").click();
-$("#editPhoto").onchange=async e=>{const f=e.target.files&&e.target.files[0];if(f){pendingEditPhoto=await imageToDataURL(f);setPhotoPreview("editPhotoPreview",pendingEditPhoto)}};
-$("#removeEditPhotoBtn").onclick=()=>{pendingEditPhoto="";$("#editPhoto").value="";setPhotoPreview("editPhotoPreview","")};
+$("#newPhoto").addEventListener("change",async e=>{
+ const f=e.target.files&&e.target.files[0]; if(!f)return;
+ try{pendingNewPhoto=await imageToDataURL(f);setPhotoPreview("newPhotoPreview",pendingNewPhoto)}
+ catch(err){alert("Je n’ai pas réussi à lire cette photo. Essaie avec une autre image 😊")}
+});
+$("#editPhoto").addEventListener("change",async e=>{
+ const f=e.target.files&&e.target.files[0]; if(!f)return;
+ try{pendingEditPhoto=await imageToDataURL(f);setPhotoPreview("editPhotoPreview",pendingEditPhoto)}
+ catch(err){alert("Je n’ai pas réussi à lire cette photo. Essaie avec une autre image 😊")}
+});
+$("#removeEditPhotoBtn").addEventListener("click",e=>{
+ e.preventDefault(); e.stopPropagation();
+ pendingEditPhoto=""; $("#editPhoto").value=""; setPhotoPreview("editPhotoPreview","");
+});
 
-$("#saveEditBtn").onclick=()=>{
+$("#saveEditBtn").addEventListener("click",(e)=>{
+ e.preventDefault(); e.stopPropagation();
  const r=recipes.find(x=>x.id==editId); if(!r)return;
  const title=$("#editTitle").value.trim(); if(!title){alert("Donne un nom à ta recette 😊");return}
- r.title=title; r.category=$("#editCategory").value; r.time=$("#editTime").value.trim()||"—";
+ r.title=title;
+ r.category=$("#editCategory").value;
+ r.time=$("#editTime").value.trim()||"—";
  r.ingredients=$("#editIngredients").value.split("\n").map(x=>x.trim()).filter(Boolean);
- r.photo=pendingEditPhoto;
+ r.photo=pendingEditPhoto||"";
  r.prep=$("#editPrep").value.split("\n").map(x=>x.trim()).filter(Boolean);
- if(!r.ingredients.length)r.ingredients=["À compléter"]; if(!r.prep.length)r.prep=["À compléter"];
- localStorage.setItem(KEY,JSON.stringify(recipes)); closeModal("editModal"); renderAll();
-};
+ if(!r.ingredients.length)r.ingredients=["À compléter"];
+ if(!r.prep.length)r.prep=["À compléter"];
+ localStorage.setItem(KEY,JSON.stringify(recipes));
+ closeModal("editModal");
+ renderAll();
+ editId=null;
+});
 
 $("#addRecipeBtn").onclick=addRecipe;
+
+$("#addLibrary").addEventListener("click",()=>{
+ const existing=new Set(recipes.map(r=>String(r.title||"").trim().toLowerCase()));
+ const toAdd=originalLibrary.filter(r=>!existing.has(String(r.title||"").trim().toLowerCase())).map(r=>({...r}));
+ if(!toAdd.length){alert("🌷 Ta bibliothèque originale est déjà dans ton carnet !");return}
+ if(!confirm(`Ajouter ${toAdd.length} recettes originales à ton carnet ? Tes recettes personnelles resteront bien sûr intactes.`)) return;
+ recipes=[...toAdd,...recipes];
+ save();
+ alert(`💗 ${toAdd.length} recettes originales ont été ajoutées ! Tu peux maintenant les chercher, les modifier et les mettre en favoris.`);
+});
+
+$("#exportData").addEventListener("click",()=>{
+ try{
+   const payload={app:"Les recettes IG bas de Camille",version:1,exportedAt:new Date().toISOString(),recipes};
+   const blob=new Blob([JSON.stringify(payload)],{type:"application/json"});
+   const url=URL.createObjectURL(blob);
+   const a=document.createElement("a");
+   a.href=url;
+   a.download="mes-recettes-ig-bas-sauvegarde.json";
+   document.body.appendChild(a);
+   a.click();
+   a.remove();
+   setTimeout(()=>URL.revokeObjectURL(url),1000);
+ }catch(err){alert("Je n’ai pas réussi à créer la sauvegarde. Réessaie 😊");}
+});
+$("#importDataBtn").addEventListener("click",()=>$("#importData").click());
+$("#importData").addEventListener("change",async e=>{
+ const f=e.target.files&&e.target.files[0]; if(!f)return;
+ try{
+   const text=await f.text();
+   const data=JSON.parse(text);
+   if(!data || !Array.isArray(data.recipes)) throw new Error("format");
+   if(!confirm("Restaurer cette sauvegarde remplacera le carnet actuel par celui du fichier. Continuer ?")){e.target.value="";return}
+   recipes=data.recipes;
+   save();
+   renderAll();
+   alert("💗 Ton carnet a bien été restauré !");
+ }catch(err){alert("Ce fichier n’est pas une sauvegarde valide de ton carnet.")}
+ e.target.value="";
+});
 $("#clearData").onclick=()=>{if(confirm("Réinitialiser les recettes de démonstration ?")){recipes=JSON.parse(JSON.stringify(seed));save()}};
 if("serviceWorker" in navigator) navigator.serviceWorker.register("service-worker.js").catch(()=>{});
 renderAll();
