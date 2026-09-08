@@ -45,6 +45,9 @@
           <button class="quick-card lilac" data-nav="recipes">
             <span class="quick-icon">♨</span><strong>Mes<br>recettes</strong>
           </button>
+          <button class="quick-card scanner-card" data-action="scan">
+            <span class="quick-icon">📷</span><strong>Scanner<br>une recette</strong>
+          </button>
         </div>
 
         <div class="illustration-banner">
@@ -172,7 +175,9 @@
       <button class="close-btn" data-close="addModal">×</button>
       <span class="eyebrow">🌷 Une nouvelle idée</span>
       <h2>Ajouter une recette</h2>
-      <div class="upload-art">📷<small>Ajouter une photo</small></div>
+      <button type="button" class="upload-art" id="newPhotoBtn">📷<small>Prendre une photo ou choisir une photo</small></button>
+      <input id="newPhoto" type="file" accept="image/*" capture="environment" hidden>
+      <img id="newPhotoPreview" class="photo-preview" alt="Aperçu de ma recette" hidden>
       <label>Nom de la recette *
         <input id="newTitle" placeholder="Ex : Bowl avocat & saumon">
       </label>
@@ -200,6 +205,9 @@
       <button class="close-btn" data-close="editModal">×</button>
       <span class="eyebrow">✏️ Modifier mon idée</span>
       <h2>Modifier la recette</h2>
+      <button type="button" class="upload-art" id="editPhotoBtn">📷<small>Changer la photo</small></button>
+      <input id="editPhoto" type="file" accept="image/*" capture="environment" hidden>
+      <img id="editPhotoPreview" class="photo-preview" alt="Aperçu de ma recette" hidden>
       <label>Nom de la recette *
         <input id="editTitle">
       </label>
@@ -221,6 +229,24 @@
     </div>
   </div>
 
+
+  <div class="modal" id="scanModal">
+    <div class="modal-card">
+      <button class="close-btn" data-close="scanModal">×</button>
+      <span class="eyebrow">📷 Mon scanner de recettes</span>
+      <h2>Photographier une recette</h2>
+      <p class="scan-help">Prends la page en photo. Le scanner lit le texte sans IA générative, puis tu peux le corriger avant de l’ajouter à ton carnet.</p>
+      <button type="button" class="upload-art scan-button" id="scanPhotoBtn">📷<small>Prendre la photo de la recette</small></button>
+      <input id="scanPhoto" type="file" accept="image/*" capture="environment" hidden>
+      <img id="scanPreview" class="photo-preview" alt="Photo de la recette à scanner" hidden>
+      <div id="scanStatus" class="scan-status"></div>
+      <label>Texte reconnu
+        <textarea id="scanText" class="scan-text" placeholder="Le texte reconnu apparaîtra ici..."></textarea>
+      </label>
+      <button class="primary-btn" id="useScanBtn">Utiliser ce texte pour créer la recette ✨</button>
+    </div>
+  </div>
+
   <div class="drawer" id="drawer">
     <div class="drawer-inner">
       <button class="close-btn" id="closeDrawer">×</button>
@@ -236,5 +262,6 @@
   </div>
 
   <script src="script.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </body>
 </html>
